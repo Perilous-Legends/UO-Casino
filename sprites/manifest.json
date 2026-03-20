@@ -1,0 +1,514 @@
+{
+  "bodies": {
+    "male": {
+      "walk": {
+        "0": {
+          "file": "walk_male_dir0.png",
+          "frameWidth": 25,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "1": {
+          "file": "walk_male_dir1.png",
+          "frameWidth": 33,
+          "frameHeight": 63,
+          "frameCount": 10
+        },
+        "2": {
+          "file": "walk_male_dir2.png",
+          "frameWidth": 40,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "3": {
+          "file": "walk_male_dir3.png",
+          "frameWidth": 32,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "4": {
+          "file": "walk_male_dir4.png",
+          "frameWidth": 26,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "5": {
+          "file": "walk_male_dir5.png",
+          "frameWidth": 32,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "6": {
+          "file": "walk_male_dir6.png",
+          "frameWidth": 40,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "7": {
+          "file": "walk_male_dir7.png",
+          "frameWidth": 33,
+          "frameHeight": 63,
+          "frameCount": 10
+        }
+      },
+      "stand": {
+        "0": {
+          "file": "stand_male_dir0.png",
+          "frameWidth": 26,
+          "frameHeight": 60,
+          "frameCount": 1
+        },
+        "1": {
+          "file": "stand_male_dir1.png",
+          "frameWidth": 22,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "2": {
+          "file": "stand_male_dir2.png",
+          "frameWidth": 17,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "3": {
+          "file": "stand_male_dir3.png",
+          "frameWidth": 26,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "4": {
+          "file": "stand_male_dir4.png",
+          "frameWidth": 27,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "5": {
+          "file": "stand_male_dir5.png",
+          "frameWidth": 26,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "6": {
+          "file": "stand_male_dir6.png",
+          "frameWidth": 17,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "7": {
+          "file": "stand_male_dir7.png",
+          "frameWidth": 22,
+          "frameHeight": 61,
+          "frameCount": 1
+        }
+      }
+    },
+    "female": {
+      "walk": {
+        "0": {
+          "file": "walk_female_dir0.png",
+          "frameWidth": 25,
+          "frameHeight": 63,
+          "frameCount": 10
+        },
+        "1": {
+          "file": "walk_female_dir1.png",
+          "frameWidth": 32,
+          "frameHeight": 63,
+          "frameCount": 10
+        },
+        "2": {
+          "file": "walk_female_dir2.png",
+          "frameWidth": 40,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "3": {
+          "file": "walk_female_dir3.png",
+          "frameWidth": 31,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "4": {
+          "file": "walk_female_dir4.png",
+          "frameWidth": 25,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "5": {
+          "file": "walk_female_dir5.png",
+          "frameWidth": 31,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "6": {
+          "file": "walk_female_dir6.png",
+          "frameWidth": 40,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "7": {
+          "file": "walk_female_dir7.png",
+          "frameWidth": 32,
+          "frameHeight": 63,
+          "frameCount": 10
+        }
+      },
+      "stand": {
+        "0": {
+          "file": "stand_female_dir0.png",
+          "frameWidth": 26,
+          "frameHeight": 60,
+          "frameCount": 1
+        },
+        "1": {
+          "file": "stand_female_dir1.png",
+          "frameWidth": 21,
+          "frameHeight": 60,
+          "frameCount": 1
+        },
+        "2": {
+          "file": "stand_female_dir2.png",
+          "frameWidth": 17,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "3": {
+          "file": "stand_female_dir3.png",
+          "frameWidth": 24,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "4": {
+          "file": "stand_female_dir4.png",
+          "frameWidth": 25,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "5": {
+          "file": "stand_female_dir5.png",
+          "frameWidth": 24,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "6": {
+          "file": "stand_female_dir6.png",
+          "frameWidth": 17,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "7": {
+          "file": "stand_female_dir7.png",
+          "frameWidth": 21,
+          "frameHeight": 60,
+          "frameCount": 1
+        }
+      }
+    },
+    "zabulus": {
+      "walk": {
+        "0": {
+          "file": "zabulus_walk_dir0.png",
+          "frameWidth": 34,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "1": {
+          "file": "zabulus_walk_dir1.png",
+          "frameWidth": 38,
+          "frameHeight": 63,
+          "frameCount": 10
+        },
+        "2": {
+          "file": "zabulus_walk_dir2.png",
+          "frameWidth": 46,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "3": {
+          "file": "zabulus_walk_dir3.png",
+          "frameWidth": 34,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "4": {
+          "file": "zabulus_walk_dir4.png",
+          "frameWidth": 34,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "5": {
+          "file": "zabulus_walk_dir5.png",
+          "frameWidth": 34,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "6": {
+          "file": "zabulus_walk_dir6.png",
+          "frameWidth": 46,
+          "frameHeight": 60,
+          "frameCount": 10
+        },
+        "7": {
+          "file": "zabulus_walk_dir7.png",
+          "frameWidth": 38,
+          "frameHeight": 63,
+          "frameCount": 10
+        }
+      },
+      "stand": {
+        "0": {
+          "file": "zabulus_stand_dir0.png",
+          "frameWidth": 28,
+          "frameHeight": 60,
+          "frameCount": 1
+        },
+        "1": {
+          "file": "zabulus_stand_dir1.png",
+          "frameWidth": 39,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "2": {
+          "file": "zabulus_stand_dir2.png",
+          "frameWidth": 30,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "3": {
+          "file": "zabulus_stand_dir3.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "4": {
+          "file": "zabulus_stand_dir4.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "5": {
+          "file": "zabulus_stand_dir5.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "6": {
+          "file": "zabulus_stand_dir6.png",
+          "frameWidth": 30,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "7": {
+          "file": "zabulus_stand_dir7.png",
+          "frameWidth": 39,
+          "frameHeight": 61,
+          "frameCount": 1
+        }
+      }
+    },
+    "radman": {
+      "walk": {
+        "0": {
+          "file": "radman_walk_dir0.png",
+          "frameWidth": 37,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "1": {
+          "file": "radman_walk_dir1.png",
+          "frameWidth": 46,
+          "frameHeight": 63,
+          "frameCount": 10
+        },
+        "2": {
+          "file": "radman_walk_dir2.png",
+          "frameWidth": 52,
+          "frameHeight": 61,
+          "frameCount": 10
+        },
+        "3": {
+          "file": "radman_walk_dir3.png",
+          "frameWidth": 41,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "4": {
+          "file": "radman_walk_dir4.png",
+          "frameWidth": 38,
+          "frameHeight": 64,
+          "frameCount": 10
+        },
+        "5": {
+          "file": "radman_walk_dir5.png",
+          "frameWidth": 41,
+          "frameHeight": 62,
+          "frameCount": 10
+        },
+        "6": {
+          "file": "radman_walk_dir6.png",
+          "frameWidth": 52,
+          "frameHeight": 61,
+          "frameCount": 10
+        },
+        "7": {
+          "file": "radman_walk_dir7.png",
+          "frameWidth": 46,
+          "frameHeight": 63,
+          "frameCount": 10
+        }
+      },
+      "stand": {
+        "0": {
+          "file": "radman_stand_dir0.png",
+          "frameWidth": 29,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "1": {
+          "file": "radman_stand_dir1.png",
+          "frameWidth": 45,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "2": {
+          "file": "radman_stand_dir2.png",
+          "frameWidth": 37,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "3": {
+          "file": "radman_stand_dir3.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "4": {
+          "file": "radman_stand_dir4.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "5": {
+          "file": "radman_stand_dir5.png",
+          "frameWidth": 29,
+          "frameHeight": 62,
+          "frameCount": 1
+        },
+        "6": {
+          "file": "radman_stand_dir6.png",
+          "frameWidth": 37,
+          "frameHeight": 61,
+          "frameCount": 1
+        },
+        "7": {
+          "file": "radman_stand_dir7.png",
+          "frameWidth": 45,
+          "frameHeight": 62,
+          "frameCount": 1
+        }
+      }
+    },
+    "repentance": {
+      "walk": {
+        "0": {
+          "file": "repentance_walk_dir0.png",
+          "frameWidth": 28,
+          "frameHeight": 71,
+          "frameCount": 10
+        },
+        "1": {
+          "file": "repentance_walk_dir1.png",
+          "frameWidth": 36,
+          "frameHeight": 69,
+          "frameCount": 10
+        },
+        "2": {
+          "file": "repentance_walk_dir2.png",
+          "frameWidth": 44,
+          "frameHeight": 66,
+          "frameCount": 10
+        },
+        "3": {
+          "file": "repentance_walk_dir3.png",
+          "frameWidth": 37,
+          "frameHeight": 67,
+          "frameCount": 10
+        },
+        "4": {
+          "file": "repentance_walk_dir4.png",
+          "frameWidth": 27,
+          "frameHeight": 69,
+          "frameCount": 10
+        },
+        "5": {
+          "file": "repentance_walk_dir5.png",
+          "frameWidth": 37,
+          "frameHeight": 67,
+          "frameCount": 10
+        },
+        "6": {
+          "file": "repentance_walk_dir6.png",
+          "frameWidth": 44,
+          "frameHeight": 66,
+          "frameCount": 10
+        },
+        "7": {
+          "file": "repentance_walk_dir7.png",
+          "frameWidth": 36,
+          "frameHeight": 69,
+          "frameCount": 10
+        }
+      },
+      "stand": {
+        "0": {
+          "file": "repentance_stand_dir0.png",
+          "frameWidth": 28,
+          "frameHeight": 68,
+          "frameCount": 1
+        },
+        "1": {
+          "file": "repentance_stand_dir1.png",
+          "frameWidth": 25,
+          "frameHeight": 68,
+          "frameCount": 1
+        },
+        "2": {
+          "file": "repentance_stand_dir2.png",
+          "frameWidth": 21,
+          "frameHeight": 67,
+          "frameCount": 1
+        },
+        "3": {
+          "file": "repentance_stand_dir3.png",
+          "frameWidth": 27,
+          "frameHeight": 66,
+          "frameCount": 1
+        },
+        "4": {
+          "file": "repentance_stand_dir4.png",
+          "frameWidth": 29,
+          "frameHeight": 67,
+          "frameCount": 1
+        },
+        "5": {
+          "file": "repentance_stand_dir5.png",
+          "frameWidth": 27,
+          "frameHeight": 66,
+          "frameCount": 1
+        },
+        "6": {
+          "file": "repentance_stand_dir6.png",
+          "frameWidth": 21,
+          "frameHeight": 67,
+          "frameCount": 1
+        },
+        "7": {
+          "file": "repentance_stand_dir7.png",
+          "frameWidth": 25,
+          "frameHeight": 68,
+          "frameCount": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heroes of Holdem - Casino</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="game-modal">
+      <iframe id="game-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+      <button id="modal-close">Close (ESC)</button>
+    </div>
+    <div id="coming-soon">
+      <h2>Coming Soon</h2>
+      <p id="coming-soon-text">This game is under construction.</p>
+      <button id="coming-soon-close">Close (ESC)</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="casino.js"></script>
+</body>
+</html>
