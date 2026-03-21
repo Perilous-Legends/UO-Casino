@@ -35,39 +35,39 @@ function angleTo8Dir(angleRad) {
 
 // Casino table/zone definitions - positioned to match 900x900 casino-floor.jpg
 const ZONES = [
-  // Roulette table - upper-left area
+  // Roulette table - upper-left
   {
     id: 'roulette',
     label: 'Roulette',
-    x: 200, y: 337,
-    w: 225, h: 135,
+    x: 220, y: 355,
+    w: 170, h: 100,
     type: 'game',
     url: './roulette.html'
   },
-  // Blackjack table - left semi-circular table
+  // Blackjack table - left semi-circular
   {
     id: 'blackjack1',
     label: 'Blackjack',
-    x: 418, y: 419,
-    w: 127, h: 57,
+    x: 185, y: 555,
+    w: 140, h: 80,
     type: 'game',
     url: 'https://htmlpreview.github.io/?https://gist.githubusercontent.com/TestamentsTCG/e576c2fcba7f4a1202dd751eee4515bd/raw/blackjack.html'
   },
-  // UTH table - right oval table
+  // UTH table - right semi-circular
   {
     id: 'uth',
     label: 'Ultimate Texas\nHold\'em',
-    x: 654, y: 421,
-    w: 164, h: 58,
+    x: 715, y: 555,
+    w: 150, h: 80,
     type: 'game',
     url: 'https://htmlpreview.github.io/?https://gist.githubusercontent.com/TestamentsTCG/35d0b3ee2fe47e327215a2c781d7a5ff/raw/uth-test.html'
   },
-  // Bar - top area
+  // Bar - full top width
   {
     id: 'bar',
     label: 'Bar',
-    x: 447, y: 99,
-    w: 733, h: 130,
+    x: 450, y: 130,
+    w: 700, h: 130,
     type: 'coming_soon'
   }
 ];
@@ -91,14 +91,14 @@ const TORCH_SPRITE = {
   frameInterval: 6  // UO anim interval
 };
 const TORCH_POSITIONS = [
-  { x: 29,  y: 129, scale: 2 },
-  { x: 832, y: 126, scale: 2 },
-  { x: 29,  y: 364, scale: 2 },
-  { x: 833, y: 363, scale: 2 },
-  { x: 29,  y: 697, scale: 2 },
-  { x: 833, y: 698, scale: 2 },
-  { x: 160, y: 58,  scale: 2 },
-  { x: 701, y: 58,  scale: 2 },
+  { x: 28,  y: 280, scale: 2 },  // left wall upper
+  { x: 28,  y: 770, scale: 2 },  // left wall lower
+  { x: 870, y: 280, scale: 2 },  // right wall upper
+  { x: 870, y: 770, scale: 2 },  // right wall lower
+  { x: 55,  y: 45,  scale: 2 },  // top-left corner
+  { x: 845, y: 45,  scale: 2 },  // top-right corner
+  { x: 100, y: 855, scale: 2 },  // bottom-left corner
+  { x: 800, y: 855, scale: 2 },  // bottom-right corner
 ];
 
 const CANDLE_SPRITE = {
@@ -110,18 +110,18 @@ const CANDLE_SPRITE = {
   frameInterval: 3
 };
 
-// 10 candles - spread around for Mike to reposition via debug
+// 10 candles - bar counter candles + table candles
 const CANDLE_POSITIONS = [
-  { x: 353, y: 139, scale: 1.5 },
-  { x: 275, y: 139, scale: 1.5 },
-  { x: 370, y: 393, scale: 1   },
-  { x: 468, y: 416, scale: 1   },
-  { x: 574, y: 415, scale: 1   },
-  { x: 715, y: 411, scale: 1   },
-  { x: 520, y: 144, scale: 1.5 },
-  { x: 369, y: 413, scale: 1   },
-  { x: 446, y: 144, scale: 1.5 },
-  { x: 661, y: 140, scale: 1.5 },
+  { x: 220, y: 175, scale: 1.5 },  // bar candle 1
+  { x: 290, y: 175, scale: 1.5 },  // bar candle 2
+  { x: 370, y: 175, scale: 1.5 },  // bar candle 3
+  { x: 440, y: 175, scale: 1.5 },  // bar candle 4
+  { x: 530, y: 175, scale: 1.5 },  // bar candle 5
+  { x: 610, y: 175, scale: 1.5 },  // bar candle 6
+  { x: 680, y: 175, scale: 1.5 },  // bar candle 7
+  { x: 220, y: 330, scale: 1   },  // roulette table candle
+  { x: 185, y: 510, scale: 1   },  // blackjack table candle
+  { x: 715, y: 510, scale: 1   },  // UTH table candle
 ];
 
 class CasinoScene extends Phaser.Scene {
