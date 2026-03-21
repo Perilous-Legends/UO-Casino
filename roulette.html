@@ -205,7 +205,7 @@ body{
 }
 .rtitle{ font-size:3.2vh; font-weight:bold; margin-bottom:0.6vh; }
 .rnum{ font-size:6.5vh; font-weight:bold; margin:0.3vh 0; }
-.rpay{ font-size:1.8vh; color:#ffd700; }
+.rpay{ font-size:1.8vh; font-weight:bold; margin-top:0.4vh; }
 #resultBanner{ cursor:pointer; }
 #resultBanner:hover{ box-shadow:0 0 60px rgba(255,215,0,0.7); }
 
@@ -376,6 +376,7 @@ body{
   <div id="resultBanner" onclick="newRound()">
     <div class="rtitle" id="rTitle">-</div>
     <div class="rnum"   id="rNum">-</div>
+    <div class="rpay"   id="rPay"></div>
   </div>
 </div>
 
@@ -645,6 +646,9 @@ function showResult(){
   document.getElementById('rTitle').style.color=payout>0?'#4aff7a':'#ff4444';
   document.getElementById('rNum').textContent=winNumber;
   document.getElementById('rNum').style.color=col==='red'?'#ff5555':col==='green'?'#4aff7a':'#ccc';
+  const rPay = document.getElementById('rPay');
+  if(payout>0){ rPay.textContent='+'+net.toLocaleString()+'g'; rPay.style.color='#4aff7a'; }
+  else { rPay.textContent='Lost '+totalBet().toLocaleString()+'g'; rPay.style.color='#ff5555'; }
   document.getElementById('resultBanner').style.display='flex';
   document.getElementById('spinBtn').disabled=false;
   document.getElementById('rebetBtn').style.visibility='visible';
