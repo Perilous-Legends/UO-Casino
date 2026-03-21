@@ -112,7 +112,9 @@ body{background:#0a1a0a;font-family:'Georgia',serif;color:#ffd700;height:100vh;o
   cursor:pointer;font-size:8px;color:#88ccff;position:relative;transition:background 0.15s;
 }
 .odds-btn:hover:not(.disabled){background:rgba(80,160,255,0.18);}
-.odds-btn.disabled{opacity:0.3;cursor:default;}
+.odds-btn.disabled{opacity:0.3;cursor:default;pointer-events:none;}
+.odds-btn.available{border-color:#4aff7a;box-shadow:0 0 8px rgba(74,255,122,0.5);animation:oddsGlow 1.2s ease-in-out infinite alternate;}
+@keyframes oddsGlow{from{box-shadow:0 0 4px rgba(74,255,122,0.3);}to{box-shadow:0 0 14px rgba(74,255,122,0.7);}}
 .odds-btn .bet-chip{position:absolute;bottom:2px;right:2px;background:#4af;color:#000;width:18px;height:18px;line-height:18px;font-size:7px;}
 .odds-btn.has-bet .bet-chip{display:block;}
 
@@ -207,7 +209,7 @@ canvas.die{border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 </div>
 
 <!-- Stickman message -->
-<div class="msg-box neutral" id="msgBox">Place your bets — Pass Line to begin</div>
+<div class="msg-box neutral" id="msgBox">Place your bets - Pass Line to begin</div>
 
 <!-- Table -->
 <div class="table-area">
@@ -349,12 +351,12 @@ canvas.die{border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
     <div class="odds-col">
       <div class="odds-btn disabled" id="z-passodds" onclick="placeBet('passodds')">
         <span style="text-align:center;line-height:1.2;">PASS<br>ODDS</span>
-        <span id="passodds-lbl" style="font-size:7px;color:#aaa;margin-top:2px;">—</span>
+        <span id="passodds-lbl" style="font-size:7px;color:#aaa;margin-top:2px;">need bet</span>
         <span class="bet-chip" id="chip-passodds">0</span>
       </div>
       <div class="odds-btn disabled" id="z-dontodds" onclick="placeBet('dontodds')">
         <span style="text-align:center;line-height:1.2;">LAY<br>ODDS</span>
-        <span id="dontodds-lbl" style="font-size:7px;color:#aaa;margin-top:2px;">—</span>
+        <span id="dontodds-lbl" style="font-size:7px;color:#aaa;margin-top:2px;">-</span>
         <span class="bet-chip" id="chip-dontodds">0</span>
       </div>
     </div>
@@ -501,6 +503,7 @@ function placeBet(id){
   bets[id] = (bets[id]||0) + cost;
   balance -= cost;
   updateUI();
+  updateZoneStates();
 }
 
 // ── CLEAR BETS ──
@@ -618,7 +621,7 @@ function resolveRoll(){
     }
   });
 
-  // ── PLACE BETS (multi-roll: OFF during come-out — don't resolve) ──
+  // ── PLACE BETS (multi-roll: OFF during come-out - don't resolve) ──
   if(phase==='point'){
     const placePayouts={4:[9,5],5:[7,5],6:[7,6],8:[7,6],9:[7,5],10:[9,5]};
     [4,5,6,8,9,10].forEach(n=>{
@@ -629,7 +632,7 @@ function resolveRoll(){
       }
     });
   }
-  // On come-out: place bets are OFF — 7 does NOT affect them
+  // On come-out: place bets are OFF - 7 does NOT affect them
 
   // ── COME BETS TRAVELLING ──
   for(const num of Object.keys(comeBets)){
@@ -666,7 +669,7 @@ function resolveRoll(){
       payouts.push(`Come Natural +${fmt(bets.come)}g`);
       bets.come=0;
     } else if([2,3,12].includes(total)){
-      // Craps: all lose Come (2, 3, AND 12 all lose — unlike Don't Pass)
+      // Craps: all lose Come (2, 3, AND 12 all lose - unlike Don't Pass)
       payouts.push('Come craps lost'); lostAny=true; bets.come=0;
     } else {
       // Travel to number
@@ -696,33 +699,33 @@ function resolveRoll(){
   // ── MAIN LINE BETS ──
   if(phase==='comeout'){
     if(total===7||total===11){
-      // NATURAL — Pass wins, Don't Pass loses
+      // NATURAL - Pass wins, Don't Pass loses
       collect('passline',1,'Pass Line');
       lose('dontpass',"Don't Pass");
-      const call = total===7 ? '🎲 SEVEN — FRONT LINE WINNER! Seven, winner, pay the line!' : '🎲 YO-ELEVEN — WINNER! Six-five, no jive!';
+      const call = total===7 ? '🎲 SEVEN - FRONT LINE WINNER! Seven, winner, pay the line!' : '🎲 YO-ELEVEN - WINNER! Six-five, no jive!';
       showMsg(call,'win');
     } else if(total===2){
-      // Craps (Snake Eyes) — Pass loses, Don't Pass wins
+      // Craps (Snake Eyes) - Pass loses, Don't Pass wins
       lose('passline','Pass Line');
       collect('dontpass',1,"Don't Pass");
-      showMsg('🎲 SNAKE EYES — Two craps two! Take the pass, pay the don\'t!','lose');
+      showMsg('🎲 SNAKE EYES - Two craps two! Take the pass, pay the don\'t!','lose');
     } else if(total===3){
-      // Craps (Ace Deuce) — Pass loses, Don't Pass wins
+      // Craps (Ace Deuce) - Pass loses, Don't Pass wins
       lose('passline','Pass Line');
       collect('dontpass',1,"Don't Pass");
-      showMsg("🎲 ACE DEUCE — Three craps three! Take the line, pay the don't!",'lose');
+      showMsg("🎲 ACE DEUCE - Three craps three! Take the line, pay the don't!",'lose');
     } else if(total===12){
-      // Boxcars — Pass loses, Don't Pass PUSHES (Bar 12)
+      // Boxcars - Pass loses, Don't Pass PUSHES (Bar 12)
       lose('passline','Pass Line');
       push('dontpass',"Don't Pass");
       // Passline and dontpass stay for next roll; refund dontpass above covers it
-      showMsg("🎲 BOXCARS — Twelve craps twelve! Take the pass, don't pass push (Bar 12)!",'push');
+      showMsg("🎲 BOXCARS - Twelve craps twelve! Take the pass, don't pass push (Bar 12)!",'push');
     } else {
       // Point established
       point=total;
       phase='point';
       const names={4:'Little Joe',5:'Fever Five',6:'Six',8:'Eighter from Decatur',9:'Nina',10:'Big Dick'};
-      showMsg(`🎲 ${total} — ${names[total]||total}! POINT IS ${total}!`,'neutral');
+      showMsg(`🎲 ${total} - ${names[total]||total}! POINT IS ${total}!`,'neutral');
       updatePuck(); updateZoneStates(); updateUI();
       rolling=false;
       document.getElementById('btnRoll').disabled=false;
@@ -732,7 +735,7 @@ function resolveRoll(){
   } else {
     // Point phase
     if(total===point){
-      // Point made — Pass wins, Don't Pass loses
+      // Point made - Pass wins, Don't Pass loses
       const pb=bets.passline;
       if(pb){ balance+=pb*2; winTotal+=pb; bets.passline=0; payouts.push(`Pass Line +${fmt(pb)}g`); }
       // Pass odds
@@ -743,11 +746,11 @@ function resolveRoll(){
       lose('dontpass',"Don't Pass");
       lose('dontodds','Lay Odds');
       // Clear place bets for the made point (player wins)
-      // Point bets stay for next come-out — no, in casino they come down. Let's take them down.
-      showMsg(`🎲 ${point} — WINNER! POINT ${point} MADE! New shooter coming out!`,'win');
+      // Point bets stay for next come-out - no, in casino they come down. Let's take them down.
+      showMsg(`🎲 ${point} - WINNER! POINT ${point} MADE! New shooter coming out!`,'win');
       point=null; phase='comeout';
     } else if(total===7){
-      // Seven-out — Pass loses, Don't Pass wins
+      // Seven-out - Pass loses, Don't Pass wins
       lose('passline','Pass Line');
       lose('passodds','Pass Odds');
       const db=bets.dontpass;
@@ -758,23 +761,23 @@ function resolveRoll(){
       }
       // All place bets lose on 7-out
       [4,5,6,8,9,10].forEach(n=>{ lose('place'+n,'Place '+n); });
-      showMsg('🎲 SEVEN OUT — Seven out! Take the don\'t, pay the line — NEW SHOOTER!','lose');
+      showMsg('🎲 SEVEN OUT - Seven out! Take the don\'t, pay the line - NEW SHOOTER!','lose');
       point=null; phase='comeout';
     } else {
-      // No decision on pass line — stickman calls
+      // No decision on pass line - stickman calls
       const calls={
         2:'Two craps two, field pays double',
         3:'Three, ace deuce',
         4:'Little Joe on the front row',
         5:'Five, no field five, fever five',
-        6:'Six easy'+(d1===3&&d2===3?' — HARD SIX!':''),
-        8:'Eight'+(d1===4&&d2===4?' — HARD EIGHT! Eighter from Decatur!':' the easy way'),
+        6:'Six easy'+(d1===3&&d2===3?' - HARD SIX!':''),
+        8:'Eight'+(d1===4&&d2===4?' - HARD EIGHT! Eighter from Decatur!':' the easy way'),
         9:'Center field nine',
-        10:'Ten'+(d1===5&&d2===5?' — HARD TEN!':' easy'),
-        11:'Yo-leven — good field and come',
+        10:'Ten'+(d1===5&&d2===5?' - HARD TEN!':' easy'),
+        11:'Yo-leven - good field and come',
         12:'Twelve craps twelve, field pays double'
       };
-      showMsg(`🎲 ${total} — ${calls[total]||total}. Roll again!`,'neutral');
+      showMsg(`🎲 ${total} - ${calls[total]||total}. Roll again!`,'neutral');
     }
   }
 
@@ -839,11 +842,11 @@ function updateUI(){
   // Odds labels
   if(point){
     const lbl={4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'};
-    document.getElementById('passodds-lbl').textContent = lbl[point]||'—';
+    document.getElementById('passodds-lbl').textContent = lbl[point]||'-';
     document.getElementById('dontodds-lbl').textContent = 'Lay';
   } else {
-    document.getElementById('passodds-lbl').textContent = '—';
-    document.getElementById('dontodds-lbl').textContent = '—';
+    document.getElementById('passodds-lbl').textContent = '-';
+    document.getElementById('dontodds-lbl').textContent = '-';
   }
 }
 
@@ -858,9 +861,14 @@ function updateZoneStates(){
   setDisabled('z-come', !isPoint);
   setDisabled('z-dontcome', !isPoint);
 
-  // Odds: only during point AND only if have flat bet
-  setDisabled('z-passodds', !isPoint || !bets.passline);
-  setDisabled('z-dontodds', !isPoint || !bets.dontpass);
+  // Odds: enabled when in point phase AND have the flat bet
+  const passOddsOk = isPoint && bets.passline > 0;
+  const dontOddsOk = isPoint && bets.dontpass > 0;
+  setDisabled('z-passodds', !passOddsOk);
+  setDisabled('z-dontodds', !dontOddsOk);
+  // Glow when available and no odds yet placed
+  document.getElementById('z-passodds')?.classList.toggle('available', passOddsOk && !bets.passodds);
+  document.getElementById('z-dontodds')?.classList.toggle('available', dontOddsOk && !bets.dontodds);
 
   // Place bets: ALWAYS available; show OFF badge during come-out
   [4,5,6,8,9,10].forEach(n=>{
