@@ -71,6 +71,24 @@ const ZONES = [
     type: 'game',
     url: './kong.html'
   },
+  // Craps table
+  {
+    id: 'craps',
+    label: 'Craps',
+    x: 450, y: 600,
+    w: 160, h: 70,
+    type: 'game',
+    url: './craps.html'
+  },
+  // Craps table - needs positioning by Mike
+  {
+    id: 'craps',
+    label: 'Craps',
+    x: 440, y: 580,
+    w: 160, h: 60,
+    type: 'game',
+    url: './craps.html'
+  },
   // Bar - full top width
   {
     id: 'bar',
@@ -444,7 +462,8 @@ class CasinoScene extends Phaser.Scene {
       blackjack1: { fill: 0xff0000, alpha: 0.25, stroke: 0xff0000 },  // red
       uth:        { fill: 0x0088ff, alpha: 0.25, stroke: 0x0088ff },  // blue
       kong:       { fill: 0xff8800, alpha: 0.25, stroke: 0xff8800 },  // orange
-      bar:        { fill: 0xffff00, alpha: 0.15, stroke: 0xffff00 }   // yellow
+      bar:        { fill: 0xffff00, alpha: 0.15, stroke: 0xffff00 },  // yellow
+      craps:      { fill: 0xff00ff, alpha: 0.25, stroke: 0xff00ff }   // magenta
     };
 
     this.debugGraphics = [];
