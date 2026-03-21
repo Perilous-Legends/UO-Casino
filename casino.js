@@ -380,9 +380,11 @@ class CasinoScene extends Phaser.Scene {
 
   createDebugOverlay() {
     const debugColors = {
-      blackjack1: { fill: 0xff0000, alpha: 0.2, stroke: 0xff0000 },
-      uth:        { fill: 0x0066ff, alpha: 0.2, stroke: 0x0066ff },
-      bar:        { fill: 0xffff00, alpha: 0.2, stroke: 0xffff00 }
+      roulette:   { fill: 0x00ff00, alpha: 0.25, stroke: 0x00ff00 },  // green
+      blackjack1: { fill: 0xff0000, alpha: 0.25, stroke: 0xff0000 },  // red
+      uth:        { fill: 0x0088ff, alpha: 0.25, stroke: 0x0088ff },  // blue
+      kong:       { fill: 0xff8800, alpha: 0.25, stroke: 0xff8800 },  // orange
+      bar:        { fill: 0xffff00, alpha: 0.15, stroke: 0xffff00 }   // yellow
     };
 
     this.debugGraphics = [];
