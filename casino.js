@@ -39,8 +39,8 @@ const ZONES = [
   {
     id: 'roulette',
     label: 'Roulette',
-    x: 222, y: 300,
-    w: 163, h: 78,
+    x: 222, y: 298,
+    w: 166, h: 69,
     type: 'game',
     url: './roulette.html'
   },
@@ -100,14 +100,14 @@ const TORCH_SPRITE = {
   frameInterval: 6  // UO anim interval
 };
 const TORCH_POSITIONS = [
-  { x: 28,  y: 280, scale: 2 },  // left wall upper
-  { x: 28,  y: 770, scale: 2 },  // left wall lower
-  { x: 870, y: 280, scale: 2 },  // right wall upper
-  { x: 870, y: 770, scale: 2 },  // right wall lower
-  { x: 55,  y: 45,  scale: 2 },  // top-left corner
-  { x: 845, y: 45,  scale: 2 },  // top-right corner
-  { x: 100, y: 855, scale: 2 },  // bottom-left corner
-  { x: 800, y: 855, scale: 2 },  // bottom-right corner
+  { x: 29,  y: 127, scale: 2 },  // left wall upper
+  { x: 29,  y: 694, scale: 2 },  // left wall lower
+  { x: 832, y: 125, scale: 2 },  // right wall upper
+  { x: 832, y: 696, scale: 2 },  // right wall lower
+  { x: 161, y: 56,  scale: 2 },  // top-left corner
+  { x: 701, y: 58,  scale: 2 },  // top-right corner
+  { x: 29,  y: 363, scale: 2 },  // left wall mid
+  { x: 832, y: 365, scale: 2 },  // right wall mid
 ];
 
 const CANDLE_SPRITE = {
@@ -121,16 +121,16 @@ const CANDLE_SPRITE = {
 
 // 10 candles - bar counter candles + table candles
 const CANDLE_POSITIONS = [
-  { x: 220, y: 175, scale: 1.5 },  // bar candle 1
-  { x: 290, y: 175, scale: 1.5 },  // bar candle 2
-  { x: 370, y: 175, scale: 1.5 },  // bar candle 3
-  { x: 440, y: 175, scale: 1.5 },  // bar candle 4
-  { x: 530, y: 175, scale: 1.5 },  // bar candle 5
-  { x: 610, y: 175, scale: 1.5 },  // bar candle 6
-  { x: 680, y: 175, scale: 1.5 },  // bar candle 7
-  { x: 220, y: 330, scale: 1   },  // roulette table candle
-  { x: 185, y: 510, scale: 1   },  // blackjack table candle
-  { x: 715, y: 510, scale: 1   },  // UTH table candle
+  { x: 275, y: 142, scale: 1.5 },  // bar candle 1
+  { x: 355, y: 140, scale: 1.5 },  // bar candle 2
+  { x: 448, y: 143, scale: 1.5 },  // bar candle 3
+  { x: 522, y: 142, scale: 1.5 },  // bar candle 4
+  { x: 609, y: 142, scale: 1.5 },  // bar candle 5
+  { x: 660, y: 142, scale: 1.5 },  // bar candle 6
+  { x: 212, y: 142, scale: 1.5 },  // bar candle 7
+  { x: 245, y: 268, scale: 1   },  // roulette table candle
+  { x: 155, y: 451, scale: 1   },  // blackjack table candle
+  { x: 623, y: 440, scale: 1   },  // UTH table candle
 ];
 
 class CasinoScene extends Phaser.Scene {
@@ -640,7 +640,7 @@ class CasinoScene extends Phaser.Scene {
   createDebugPanel() {
     const panelW = 280;
     const panelH = 380;
-    const panelX = VIEW_W - panelW - 8;
+    const panelX = 8;
     const panelY = VIEW_H - panelH - 8;
 
     // Panel background
@@ -659,7 +659,7 @@ class CasinoScene extends Phaser.Scene {
     }).setDepth(56).setScrollFactor(0).setVisible(false);
 
     // COPY button
-    this.debugCopyBtn = this.add.text(panelX + panelW - 50, panelY + panelH - 22, ' COPY ', {
+    this.debugCopyBtn = this.add.text(panelX + panelW - 54, panelY + panelH - 22, ' COPY ', {
       fontSize: '10px',
       fontFamily: 'monospace',
       color: '#000000',
@@ -753,12 +753,16 @@ class CasinoScene extends Phaser.Scene {
       }
     }
 
-    // Stop player movement when entering debug mode
+    // Stop player movement when entering debug mode; detach camera so pan works
     if (debugMode) {
       this.moveTarget = null;
       this.player.body.setVelocity(0, 0);
       isMoving = false;
+      this.cameras.main.stopFollow();
       this.updateDebugPanelText();
+    } else {
+      // Re-attach camera follow when debug mode off
+      this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     }
     // Hide any lingering readouts
     for (const readout of this.debugCoordReadouts) {
@@ -772,18 +776,36 @@ class CasinoScene extends Phaser.Scene {
     this.dKey = this.input.keyboard.addKey('D');
 
     // Right-click to move; hold and drag to continuously update direction
+    // In debug mode: right-click drag pans the camera
+    this._debugPanLast = null;
     this.input.on('pointerdown', (pointer) => {
       if (!pointer.rightButtonDown()) return;
       if (modalOpen) return;
-      if (debugMode) return;
+      if (debugMode) {
+        this._debugPanLast = { x: pointer.x, y: pointer.y };
+        return;
+      }
       this.setMoveTarget(pointer);
     });
 
     this.input.on('pointermove', (pointer) => {
       if (!pointer.rightButtonDown()) return;
       if (modalOpen) return;
-      if (debugMode) return;
+      if (debugMode) {
+        if (this._debugPanLast) {
+          const dx = pointer.x - this._debugPanLast.x;
+          const dy = pointer.y - this._debugPanLast.y;
+          this.cameras.main.scrollX = Phaser.Math.Clamp(this.cameras.main.scrollX - dx, 0, WORLD_W - VIEW_W);
+          this.cameras.main.scrollY = Phaser.Math.Clamp(this.cameras.main.scrollY - dy, 0, WORLD_H - VIEW_H);
+          this._debugPanLast = { x: pointer.x, y: pointer.y };
+        }
+        return;
+      }
       this.setMoveTarget(pointer);
+    });
+
+    this.input.on('pointerup', (pointer) => {
+      this._debugPanLast = null;
     });
   }
 
