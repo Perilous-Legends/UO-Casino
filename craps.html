@@ -4383,7 +4383,7 @@ function buildDiceKeyframes() {
   const d2 = Math.sqrt(bx*bx + by*by);              // BOUNCE to STOP
   const total = (d1 + d2) || 1;
   const pct  = Math.max(10, Math.min(85, Math.round(d1/total*100)));
-  const dur  = 1.62;
+  const dur  = 1.13;
   const rot1 =  360*4, rot2 = -360*3;
   const rb1  = Math.round(rot1*pct/100), rb2 = Math.round(rot2*pct/100);
   const kf = `
