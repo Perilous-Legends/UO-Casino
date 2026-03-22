@@ -1,1094 +1,2188 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Craps - Perilous Legends</title>
+
 <style>
+
 *{box-sizing:border-box;margin:0;padding:0;}
+
 body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;background-color:#000;font-family:'Georgia',serif;color:#ffd700;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
 .bal-bar{display:none;}
+
 .table-area{flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;padding:0;min-height:0;}
+
 .craps-table{
+
   background:transparent;
+
   border:none;border-radius:0;
+
   box-shadow:none;
+
   width:100%;max-width:100%;display:flex;flex-direction:column;gap:4px;padding:10px;
+
 }
+
 .zone{border:1px solid rgba(255,215,0,0.35);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;user-select:none;transition:background 0.15s,box-shadow 0.15s;font-size:14px;font-weight:bold;letter-spacing:1px;color:#ffd700;text-align:center;flex-direction:column;}
+
 .zone:hover:not(.disabled){background:rgba(255,215,0,0.18);box-shadow:0 0 8px rgba(255,215,0,0.3);}
+
 .zone.has-bet{background:rgba(255,215,0,0.12);}
+
 .zone{background:rgba(0,0,0,0.25);}
+
 .zone.disabled{cursor:default;opacity:0.42;pointer-events:none;}
+
 .bet-chip{position:absolute;bottom:3px;right:4px;background:#c9a84c;color:#000;border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;font-size:11px;font-weight:bold;display:none;}
+
 .zone.has-bet .bet-chip{display:block;}
+
 .off-badge{position:absolute;top:3px;left:3px;background:#444;color:#aaa;font-size:9px;border-radius:2px;padding:1px 4px;display:none;}
 
+
+
 /* Rows */
+
 .row{display:flex;gap:4px;width:100%;}
+
 .row-dont{height:46px;}
+
 .row-numbers{height:var(--num-row-h,59px);}
+
 .row-come-props{height:72px;}
+
 .row-field{height:52px;}
+
 .row-passline{height:52px;}
 
+
+
 /* Don't Pass / Don't Come */
+
 #z-dontpass,#z-dontcome{background:rgba(100,20,20,0.25);border-color:rgba(255,100,100,0.3);color:#ff9999;}
+
 #z-dontpass:hover:not(.disabled),#z-dontcome:hover:not(.disabled){background:rgba(200,60,60,0.15);}
+
 #z-dontpass{flex:1;}
+
 #z-dontcome{width:110px;flex-shrink:0;}
 
+
+
 /* Number boxes */
+
 .num-box{flex:var(--num-flex,1);border-color:rgba(255,215,0,0.5);padding:3px;overflow:hidden;min-width:var(--num-min-w,30px);}
+
 .num-box .num{font-size:var(--num-font,13px);font-weight:bold;line-height:1;}
+
 .num-box .place-odds{font-size:var(--num-odds-font,6px);color:#aaa;}
+
 .num-box.is-point{background:rgba(255,215,0,0.15);border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.3);}
+
 .puck{width:36px;height:36px;border-radius:50%;border:3px solid #ffd700;font-size:11px;font-weight:bold;line-height:36px;text-align:center;position:absolute;top:-6px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:10;transition:all 0.3s;display:none;}
+
 .puck.on{display:block;background:#fff;color:#000;border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.8);}
+
 .puck.off{display:none;}
 
+
+
 /* Come/DontCome bet indicators on number boxes */
+
 .come-stack{position:absolute;top:2px;left:2px;right:2px;display:flex;flex-direction:column;gap:1px;pointer-events:none;}
+
 .come-indicator{display:none;border-radius:2px;font-size:9px;font-weight:bold;padding:2px 4px;text-align:center;cursor:pointer;pointer-events:all;}
+
 .come-indicator.come-bet{background:rgba(50,100,220,0.85);color:#adf;border:1px solid #4af;}
+
 .come-indicator.come-odds{background:rgba(0,160,60,0.85);color:#aff;border:1px solid #4fa;cursor:pointer;}
+
 .come-indicator.dc-bet{background:rgba(180,40,40,0.85);color:#faa;border:1px solid #f66;}
+
 .come-indicator.dc-odds{background:rgba(140,0,0,0.85);color:#fcc;border:1px solid #f44;cursor:pointer;}
+
 .come-indicator:hover{filter:brightness(1.25);}
 
+
+
 /* Come bet area */
+
 #z-come{width:360px;flex-shrink:0;font-size:17px;letter-spacing:3px;}
 
+
+
 /* Props panel */
+
 .props-panel{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;}
+
 .props-row{display:flex;gap:3px;height:32px;}
+
 .prop-box{flex:1;border:1px solid rgba(255,215,0,0.25);border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 6px;cursor:pointer;position:relative;transition:background 0.15s;font-size:11px;}
+
 .prop-box:hover{background:rgba(255,215,0,0.1);}
+
 .prop-box.has-bet{background:rgba(255,215,0,0.07);}
+
 .prop-box .pname{font-weight:bold;color:#ffd700;}
+
 .prop-box .podds{color:#888;font-size:10px;}
+
 .prop-box .bet-chip{position:absolute;bottom:2px;right:3px;width:22px;height:22px;line-height:22px;font-size:9px;}
+
 .prop-box.has-bet .bet-chip{display:block;}
+
 .hard-box{flex:1;border:1px solid rgba(255,215,0,0.22);border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 5px;cursor:pointer;font-size:10px;position:relative;transition:background 0.15s;}
+
 .hard-box:hover{background:rgba(255,215,0,0.1);}
+
 .hard-box.has-bet{background:rgba(255,215,0,0.07);}
+
 .hard-box .bet-chip{position:absolute;bottom:1px;right:2px;width:20px;height:20px;line-height:20px;font-size:8px;}
+
 .hard-box.has-bet .bet-chip{display:block;}
 
+
+
 /* Odds column */
+
 .odds-col{display:flex;flex-direction:column;gap:4px;width:72px;flex-shrink:0;}
+
 .odds-btn{flex:1;background:rgba(0,80,180,0.2);border:1px solid rgba(80,160,255,0.35);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#88ccff;position:relative;transition:background 0.15s,box-shadow 0.15s;}
+
 .odds-btn:hover:not(.disabled){background:rgba(80,160,255,0.18);}
+
 .odds-btn.disabled{opacity:0.3;cursor:default;pointer-events:none;}
+
 .odds-btn.available{border-color:#4aff7a;color:#4aff7a;animation:oddsGlow 1.2s ease-in-out infinite alternate;}
+
 @keyframes oddsGlow{from{box-shadow:0 0 4px rgba(74,255,122,0.3);}to{box-shadow:0 0 14px rgba(74,255,122,0.7);}}
+
 .odds-btn .bet-chip{position:absolute;bottom:2px;right:2px;background:#4af;color:#000;width:24px;height:24px;line-height:24px;font-size:9px;}
+
 .odds-btn.has-bet .bet-chip{display:block;}
 
+
+
 /* Field / Pass Line */
+
 #z-field{flex:1;}
+
 #z-field .fnums{font-size:11px;color:#aaa;margin-top:2px;}
+
 #z-passline{flex:1;font-size:18px;letter-spacing:3px;border-color:rgba(255,215,0,0.6);}
 
+
+
 /* Dice */
+
 .dice-panel{width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;overflow:visible;}
+
 .dice-row{display:flex;gap:14px;}
+
 .die-wrap{position:relative;width:70px;height:70px;display:flex;align-items:center;justify-content:center;}
+
 .die-shadow{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);width:54px;height:12px;background:radial-gradient(ellipse,rgba(0,0,0,0.55) 0%,transparent 70%);border-radius:50%;opacity:0;}
+
 canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:block;position:relative;z-index:1;}
+
 .dice-total{font-size:30px;font-weight:bold;color:#ffd700;min-height:36px;text-align:center;}
+
 .point-disp{font-size:12px;color:#aaa;text-align:center;min-height:16px;}
 
+
+
 /* Message */
+
 .msg-box{text-align:center;min-height:24px;font-size:14px;font-weight:bold;color:#ffd700;letter-spacing:1px;padding:3px 8px;flex-shrink:0;font-style:italic;background:rgba(0,0,0,0.55);}
+
 .msg-box.win{color:#4aff7a;animation:flashWin 0.7s ease-out;}
+
 .msg-box.lose{color:#ff4a4a;animation:flashLose 0.7s ease-out;}
+
 .msg-box.push{color:#88aaff;}
+
 @keyframes flashWin{0%,100%{color:#4aff7a;}50%{color:#fff;text-shadow:0 0 12px #4aff7a;}}
+
 @keyframes flashLose{0%,100%{color:#ff4a4a;}50%{color:#fff;text-shadow:0 0 12px #ff4a4a;}}
+
 .payout-bar{text-align:center;padding:8px 16px;flex-shrink:0;background:rgba(0,0,0,0.65);border-top:2px solid rgba(255,215,0,0.15);border-bottom:2px solid rgba(255,215,0,0.15);font-size:17px;font-weight:bold;letter-spacing:1px;min-height:38px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;}
+
 .payout-bar.show-win{color:#4aff7a;border-color:rgba(74,255,122,0.35);text-shadow:0 0 12px rgba(74,255,122,0.4);}
+
 .payout-bar.show-lose{color:#ff5555;border-color:rgba(255,85,85,0.35);text-shadow:0 0 12px rgba(255,85,85,0.3);}
+
 .payout-bar.show-push{color:#88aaff;}
+
 .payout-bar.empty{color:#444;font-size:13px;font-weight:normal;}
 
+
+
 /* Bottom bar */
+
 .bottom-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.65);border-top:1px solid #4a3a10;flex-shrink:0;flex-wrap:wrap;}
+
 .chip-row{display:flex;gap:5px;}
+
 .chip-btn{width:52px;height:52px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;background:none;transition:transform .1s,box-shadow .1s,border-color .1s;}
+
 .chip-btn img{width:100%;height:100%;border-radius:50%;display:block;pointer-events:none;}
+
 .chip-btn:hover{transform:translateY(-3px);}
+
 .chip-btn.selected{transform:translateY(-5px) scale(1.1);border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.5);}
+
 .hud-info{display:flex;flex-direction:column;justify-content:center;gap:3px;font-size:15px;font-family:Georgia,serif;letter-spacing:1px;margin-left:auto;padding:0 10px;color:#ccaa55;line-height:1.3;}
+
 .hud-info strong{font-size:16px;}
+
 .btn-roll{padding:11px 32px;font-size:16px;font-family:Georgia,serif;font-weight:bold;background:linear-gradient(135deg,#1a6b1a,#2a9b2a);color:#ffd700;border:2px solid #4aff7a;border-radius:8px;cursor:pointer;letter-spacing:2px;}
+
 .btn-roll:hover:not(:disabled){background:linear-gradient(135deg,#2a8b2a,#3ab53a);box-shadow:0 0 15px rgba(74,255,122,0.4);}
+
 .btn-roll:disabled{opacity:0.4;cursor:not-allowed;}
+
 .btn-clear{padding:7px 14px;font-size:11px;font-family:Georgia,serif;background:rgba(100,20,20,0.6);color:#ff8888;border:1px solid #ff4a4a66;border-radius:6px;cursor:pointer;}
+
 .btn-clear:hover:not(:disabled){background:rgba(150,30,30,0.7);}
+
 .btn-clear:disabled{opacity:0.4;cursor:not-allowed;}
+
 .btn-remove{padding:7px 14px;font-size:11px;font-family:Georgia,serif;background:rgba(60,20,80,0.6);color:#cc88ff;border:1px solid #aa44ff66;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+
 .btn-remove:hover{background:rgba(90,30,120,0.7);}
+
 .btn-remove.active{background:rgba(140,40,200,0.85);color:#fff;border-color:#cc88ff;box-shadow:0 0 10px rgba(180,80,255,0.5);}
+
 .btn-off{padding:7px 14px;font-size:11px;font-family:Georgia,serif;background:rgba(80,60,0,0.6);color:#ffcc44;border:1px solid #ffcc4466;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+
 .btn-off:hover{background:rgba(110,80,0,0.7);}
+
 .btn-off.active{background:rgba(180,130,0,0.85);color:#000;border-color:#ffcc44;box-shadow:0 0 10px rgba(255,200,50,0.5);}
 
+
+
 /* Dice throw */
+
 @keyframes throwDie1{0%{transform:translate(140px,180px) rotate(0deg) scale(1.4);opacity:0.7;}15%{transform:translate(90px,100px) rotate(200deg) scale(1.3);opacity:1;}45%{transform:translate(12px,8px) rotate(600deg) scale(1.15);}62%{transform:translate(-6px,-12px) rotate(680deg) scale(0.88);}74%{transform:translate(3px,6px) rotate(710deg) scale(1.06);}84%{transform:translate(-2px,-4px) rotate(725deg) scale(0.97);}92%{transform:translate(1px,2px) rotate(732deg) scale(1.01);}100%{transform:translate(0,0) rotate(var(--rot1,720deg)) scale(1);}}
+
 @keyframes throwDie2{0%{transform:translate(100px,200px) rotate(0deg) scale(1.4);opacity:0.7;}15%{transform:translate(60px,120px) rotate(-180deg) scale(1.25);opacity:1;}45%{transform:translate(-8px,6px) rotate(-520deg) scale(1.1);}62%{transform:translate(5px,-10px) rotate(-600deg) scale(0.9);}74%{transform:translate(-3px,5px) rotate(-625deg) scale(1.05);}84%{transform:translate(2px,-3px) rotate(-638deg) scale(0.98);}92%{transform:translate(-1px,1px) rotate(-644deg) scale(1.01);}100%{transform:translate(0,0) rotate(var(--rot2,-630deg)) scale(1);}}
+
 .die-wrap.throwing1{animation:throwDie1 0.65s cubic-bezier(0.22,0.61,0.36,1) forwards;}
+
 .die-wrap.throwing2{animation:throwDie2 0.65s cubic-bezier(0.22,0.61,0.36,1) forwards;}
+
 @keyframes shadowIn{0%{opacity:0;}80%{opacity:0;}100%{opacity:1;}}
+
 .die-wrap.throwing1 .die-shadow,.die-wrap.throwing2 .die-shadow{animation:shadowIn 0.65s forwards;}
+
+
 
 #muteBtn{position:fixed;top:8px;right:10px;z-index:999;background:rgba(0,0,0,0.6);border:1px solid #c9a84c44;color:#ffd700;font-size:17px;padding:3px 8px;border-radius:6px;cursor:pointer;}
 
+
+
 /* Hint bar */
+
 .hint{font-size:9px;color:#aaa;text-align:center;padding:1px 4px;flex-shrink:0;background:rgba(0,0,0,0.5);}
 
+
+
 /* Number overlay zones */
+
 .num-zone{position:absolute;pointer-events:all;cursor:pointer;border:1px solid rgba(255,215,0,0.4);border-radius:4px;background:rgba(0,0,0,0.18);display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;transition:background 0.15s;}
+
 .num-zone:hover{background:rgba(255,215,0,0.18);border-color:#ffd700;}
+
 .num-zone.has-bet{background:rgba(255,215,0,0.12);}
+
 .num-zone.is-point{background:rgba(255,215,0,0.15);border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.4);}
+
 .num-zone .bet-chip{position:absolute;bottom:3px;right:4px;background:#c9a84c;color:#000;border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;font-size:11px;font-weight:bold;display:none;}
+
 .num-zone.has-bet .bet-chip{display:block;}
+
 .num-zone .puck{top:2px;left:50%;transform:translateX(-50%);}
+
 .num-zone .off-badge{top:2px;left:2px;display:none;}
+
 .num-zone .come-stack{top:2px;left:2px;right:28px;}
+
 .bet-zone-overlay{position:absolute;pointer-events:all;}
 
+
+
 /* Debug panel */
+
 #dbgPanel{position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,0.88);border:1px solid #ffd70066;border-radius:8px;padding:10px 14px;font-size:11px;font-family:monospace;color:#ffd700;min-width:260px;display:none;}
+
 #dbgPanel.visible{display:block;}
+
 #dbgPanel h3{margin:0 0 8px;font-size:13px;border-bottom:1px solid #ffd70044;padding-bottom:4px;}
+
 #dbgPanel label{display:flex;justify-content:space-between;align-items:center;margin:4px 0;gap:8px;}
+
 #dbgPanel input[type=range]{flex:1;accent-color:#ffd700;}
+
 #dbgPanel .val{width:40px;text-align:right;color:#fff;}
+
 #dbgPanel .section{margin-top:8px;border-top:1px solid #ffd70033;padding-top:6px;font-size:10px;color:#aaa;}
+
 #dbgPanel textarea{width:100%;height:80px;background:#111;color:#4aff7a;border:1px solid #333;border-radius:4px;font-size:10px;font-family:monospace;margin-top:6px;resize:vertical;}
+
 #dbgPanel button{margin-top:4px;width:100%;padding:4px;background:#333;color:#ffd700;border:1px solid #ffd70055;border-radius:4px;cursor:pointer;font-size:11px;}
+
 #dbgPanel button:hover{background:#555;}
 
+
+
 /* Zone shapes */
+
 .shape-rounded { border-radius: 28px !important; }
+
 .shape-circle  { border-radius: 50% !important; }
+
 .shape-diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) !important; }
+
 .shape-hex     { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%) !important; }
+
 .shape-octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%) !important; }
 
+
+
 .dbg-toggle{position:fixed;bottom:10px;right:10px;z-index:9999;padding:5px 10px;background:rgba(0,0,0,0.7);border:1px solid #ffd70055;border-radius:4px;color:#ffd700;font-size:11px;cursor:pointer;}
+
 </style>
+
 </head>
+
 <body>
-<button id="muteBtn" onclick="toggleMute()">ðŸ"Š</button>
+
+<button id="muteBtn" onclick="toggleMute()">"</button>
+
 <audio id="bgAmbience" loop src="./casino-ambience.mp3"></audio>
 
+
+
 <div class="bal-bar">
+
   <span>Balance: <strong id="balDisplay">100,000</strong>g</span>
-  <span style="color:#aaa;font-size:11px;letter-spacing:2px;">PERILOUS LEGENDS &nbsp;Â·&nbsp; CRAPS</span>
+
+  <span style="color:#aaa;font-size:11px;letter-spacing:2px;">PERILOUS LEGENDS &nbsp;&middot;&nbsp; CRAPS</span>
+
   <span>Bet: <strong id="betDisplay">0</strong>g</span>
+
 </div>
 
-<div class="msg-box neutral" id="msgBox">Place your bets â€" Pass Line to begin</div>
+
+
+<div class="msg-box neutral" id="msgBox">Place your bets  -  Pass Line to begin</div>
+
 <div class="hint">
-  <strong style="color:#4aff7a">PASS/COME ODDS (3-4-5x)</strong>: 4/10 max 3xâ†'pays 2:1 &nbsp;Â·&nbsp; 5/9 max 4xâ†'pays 3:2 &nbsp;Â·&nbsp; 6/8 max 5xâ†'pays 6:5 &nbsp;|&nbsp;
-  <strong style="color:#ff8888">LAY ODDS</strong>: 4/10 pay 1:2 &nbsp;Â·&nbsp; 5/9 pay 2:3 &nbsp;Â·&nbsp; 6/8 pay 5:6 &nbsp;|&nbsp;
+
+  <strong style="color:#4aff7a">PASS/COME ODDS (3-4-5x)</strong>: 4/10 max 3x pays 2:1 &nbsp;&middot;&nbsp; 5/9 max 4x pays 3:2 &nbsp;&middot;&nbsp; 6/8 max 5x pays 6:5 &nbsp;|&nbsp;
+
+  <strong style="color:#ff8888">LAY ODDS</strong>: 4/10 pay 1:2 &nbsp;&middot;&nbsp; 5/9 pay 2:3 &nbsp;&middot;&nbsp; 6/8 pay 5:6 &nbsp;|&nbsp;
+
   Click Come/DC badge on number box to add odds
+
 </div>
+
+
 
 <div class="table-area">
+
 <div class="craps-table">
 
+
+
   <!-- Row 2: Dice only (all bet zones are now fixed overlays on the background) -->
+
   <div class="row row-numbers" style="justify-content:center;">
+
     <!-- Dice panel -->
+
     <div class="dice-panel">
+
       <div class="dice-row" id="diceRow">
+
         <div class="die-wrap" id="dieWrap1"><div class="die-shadow" id="dieShadow1"></div><canvas class="die" id="die1" width="66" height="66"></canvas></div>
+
         <div class="die-wrap" id="dieWrap2"><div class="die-shadow" id="dieShadow2"></div><canvas class="die" id="die2" width="66" height="66"></canvas></div>
+
       </div>
+
       <div class="dice-total" id="diceTotal"></div>
+
       <div class="point-disp" id="pointDisp">COME-OUT ROLL</div>
+
     </div>
+
   </div>
 
-</div>
+
+
 </div>
 
-<div class="payout-bar empty" id="payoutBar">â€"</div>
+</div>
+
+
+
+<div class="payout-bar empty" id="payoutBar"> - </div>
+
+
 
 <div class="bottom-bar">
+
   <div class="chip-row">
+
     <button class="chip-btn selected" id="chip-sel-100"  onclick="selectChip(100)"><img  src="https://drive.google.com/thumbnail?id=1hx7VaQG7UFHtdOE_uGJ64cOuedd81n-x&sz=w120" alt="100"></button>
+
     <button class="chip-btn"          id="chip-sel-500"  onclick="selectChip(500)"><img  src="https://drive.google.com/thumbnail?id=1IJ7Lp03TQ7rJjetXNoUGq9TB5b8sJmTs&sz=w120" alt="500"></button>
+
     <button class="chip-btn"          id="chip-sel-1k"   onclick="selectChip(1000)"><img src="https://drive.google.com/thumbnail?id=1gN38szt9JExdAZrVipnRKahg9zLwGtOq&sz=w120" alt="1K"></button>
+
     <button class="chip-btn"          id="chip-sel-5k"   onclick="selectChip(5000)"><img src="https://drive.google.com/thumbnail?id=11cxGHjfNZFIJgTXnQGmFDSFK-1fUhVup&sz=w120" alt="5K"></button>
+
     <button class="chip-btn"          id="chip-sel-10k"  onclick="selectChip(10000)"><img src="https://drive.google.com/thumbnail?id=10SkRQCPz-BckF4jBUS0noiSmThGsyx47&sz=w120" alt="10K"></button>
+
   </div>
+
   <button class="btn-clear"    id="btnClear"   onclick="clearBets()">CLEAR</button>
+
   <button class="btn-remove"   id="btnRemove"  onclick="toggleRemove()">TAKE DOWN</button>
+
   <button class="btn-off"      id="btnOff"     onclick="togglePlaceOff()">BETS OFF</button>
+
   <div class="hud-info">
+
     <div>Bal: <strong id="balDisplay" style="color:#ffd700;">100,000</strong>g</div>
+
     <div>Bet: <strong id="betDisplay" style="color:#ffd700;">0</strong>g</div>
+
     <div>Roll Net: <strong id="netDisplay" style="color:#ffd700;">+0</strong>g</div>
+
   </div>
+
   <button class="btn-roll"     id="btnRoll"    onclick="rollDice()">ROLL</button>
+
 </div>
+
+
 
 <!-- Fixed number zone overlays on the background image -->
+
 <div id="numOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;">
 
+
+
   <div class="num-zone" id="z-place4" onclick="placeBet('place4')" title="Place 4 (9:5)">
+
     <div class="puck off" id="puck4">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come4"   onclick="event.stopPropagation();addComeOdds(4)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds4"  onclick="event.stopPropagation();addComeOdds(4)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc4"     onclick="event.stopPropagation();addDCOdds(4)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds4" onclick="event.stopPropagation();addDCOdds(4)"></span>
+
     </div>
+
     <span class="off-badge" id="off4">OFF</span>
+
     <span class="bet-chip" id="chip-place4">0</span>
+
   </div>
+
+
 
   <div class="num-zone" id="z-place5" onclick="placeBet('place5')" title="Place 5 (7:5)">
+
     <div class="puck off" id="puck5">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come5"   onclick="event.stopPropagation();addComeOdds(5)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds5"  onclick="event.stopPropagation();addComeOdds(5)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc5"     onclick="event.stopPropagation();addDCOdds(5)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds5" onclick="event.stopPropagation();addDCOdds(5)"></span>
+
     </div>
+
     <span class="off-badge" id="off5">OFF</span>
+
     <span class="bet-chip" id="chip-place5">0</span>
+
   </div>
+
+
 
   <div class="num-zone" id="z-place6" onclick="placeBet('place6')" title="Place 6 (7:6)">
+
     <div class="puck off" id="puck6">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come6"   onclick="event.stopPropagation();addComeOdds(6)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds6"  onclick="event.stopPropagation();addComeOdds(6)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc6"     onclick="event.stopPropagation();addDCOdds(6)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds6" onclick="event.stopPropagation();addDCOdds(6)"></span>
+
     </div>
+
     <span class="off-badge" id="off6">OFF</span>
+
     <span class="bet-chip" id="chip-place6">0</span>
+
   </div>
+
+
 
   <div class="num-zone" id="z-place8" onclick="placeBet('place8')" title="Place 8 (7:6)">
+
     <div class="puck off" id="puck8">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come8"   onclick="event.stopPropagation();addComeOdds(8)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds8"  onclick="event.stopPropagation();addComeOdds(8)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc8"     onclick="event.stopPropagation();addDCOdds(8)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds8" onclick="event.stopPropagation();addDCOdds(8)"></span>
+
     </div>
+
     <span class="off-badge" id="off8">OFF</span>
+
     <span class="bet-chip" id="chip-place8">0</span>
+
   </div>
+
+
 
   <div class="num-zone" id="z-place9" onclick="placeBet('place9')" title="Place 9 (7:5)">
+
     <div class="puck off" id="puck9">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come9"   onclick="event.stopPropagation();addComeOdds(9)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds9"  onclick="event.stopPropagation();addComeOdds(9)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc9"     onclick="event.stopPropagation();addDCOdds(9)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds9" onclick="event.stopPropagation();addDCOdds(9)"></span>
+
     </div>
+
     <span class="off-badge" id="off9">OFF</span>
+
     <span class="bet-chip" id="chip-place9">0</span>
+
   </div>
+
+
 
   <div class="num-zone" id="z-place10" onclick="placeBet('place10')" title="Place 10 (9:5)">
+
     <div class="puck off" id="puck10">ON</div>
+
     <div class="come-stack">
+
       <span class="come-indicator come-bet"  id="ci-come10"   onclick="event.stopPropagation();addComeOdds(10)"></span>
+
       <span class="come-indicator come-odds" id="ci-codds10"  onclick="event.stopPropagation();addComeOdds(10)"></span>
+
       <span class="come-indicator dc-bet"    id="ci-dc10"     onclick="event.stopPropagation();addDCOdds(10)"></span>
+
       <span class="come-indicator dc-odds"   id="ci-dcodds10" onclick="event.stopPropagation();addDCOdds(10)"></span>
+
     </div>
+
     <span class="off-badge" id="off10">OFF</span>
+
     <span class="bet-chip" id="chip-place10">0</span>
+
   </div>
 
+
+
 </div>
+
+
 
 <!-- Bet zone overlays (all zones except 4/5/6/8/9/10 which are in numOverlay) -->
+
 <div id="betOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:49;">
+
   <div class="zone bet-zone-overlay" id="z-dontpass" onclick="placeBet('dontpass')">
-    <span style="font-size:10px;">DON'T PASS BAR &nbsp;Â·&nbsp; 1:1 &nbsp;Â·&nbsp; 12 Pushes</span>
+
+    <span style="font-size:10px;">DON'T PASS BAR &nbsp;&middot;&nbsp; 1:1 &nbsp;&middot;&nbsp; 12 Pushes</span>
+
     <span class="bet-chip" id="chip-dontpass">0</span>
+
   </div>
+
   <div class="zone bet-zone-overlay" id="z-dontcome" onclick="placeBet('dontcome')">
+
     <span style="font-size:9px;">DON'T<br>COME</span>
+
     <span class="bet-chip" id="chip-dontcome">0</span>
+
   </div>
+
   <div class="zone bet-zone-overlay" id="z-come" onclick="placeBet('come')">
+
     <span style="font-size:13px;letter-spacing:2px;">COME</span>
+
     <span class="bet-chip" id="chip-come">0</span>
+
   </div>
+
   <div class="prop-box bet-zone-overlay" id="z-any7" onclick="placeBet('any7')" style="border-color:rgba(255,80,80,0.4);color:#ff8888;"><span class="pname">ANY 7</span><span class="podds">4:1</span><span class="bet-chip" id="chip-any7">0</span></div>
+
   <div class="prop-box bet-zone-overlay" id="z-anycraps" onclick="placeBet('anycraps')" style="border-color:rgba(200,80,255,0.3);color:#cc88ff;"><span class="pname">ANY CRAPS</span><span class="podds">7:1</span><span class="bet-chip" id="chip-anycraps">0</span></div>
+
   <div class="prop-box bet-zone-overlay" id="z-yo" onclick="placeBet('yo')" style="border-color:rgba(80,200,255,0.3);color:#88ddff;"><span class="pname">YO (11)</span><span class="podds">15:1</span><span class="bet-chip" id="chip-yo">0</span></div>
+
   <div class="prop-box bet-zone-overlay" id="z-two"    onclick="placeBet('two')"><span class="pname">2</span><span class="podds">30:1</span><span class="bet-chip" id="chip-two">0</span></div>
+
   <div class="prop-box bet-zone-overlay" id="z-three"  onclick="placeBet('three')"><span class="pname">3</span><span class="podds">15:1</span><span class="bet-chip" id="chip-three">0</span></div>
+
   <div class="prop-box bet-zone-overlay" id="z-twelve" onclick="placeBet('twelve')"><span class="pname">12</span><span class="podds">30:1</span><span class="bet-chip" id="chip-twelve">0</span></div>
+
   <div class="hard-box bet-zone-overlay" id="z-hard4"  onclick="placeBet('hard4')"><span style="color:#ffd700;font-weight:bold;">H4</span><span style="color:#888;font-size:7px;">7:1</span><span class="bet-chip" id="chip-hard4">0</span></div>
+
   <div class="hard-box bet-zone-overlay" id="z-hard6"  onclick="placeBet('hard6')"><span style="color:#ffd700;font-weight:bold;">H6</span><span style="color:#888;font-size:7px;">9:1</span><span class="bet-chip" id="chip-hard6">0</span></div>
+
   <div class="hard-box bet-zone-overlay" id="z-hard8"  onclick="placeBet('hard8')"><span style="color:#ffd700;font-weight:bold;">H8</span><span style="color:#888;font-size:7px;">9:1</span><span class="bet-chip" id="chip-hard8">0</span></div>
+
   <div class="hard-box bet-zone-overlay" id="z-hard10" onclick="placeBet('hard10')"><span style="color:#ffd700;font-weight:bold;">H10</span><span style="color:#888;font-size:7px;">7:1</span><span class="bet-chip" id="chip-hard10">0</span></div>
+
   <div class="odds-btn disabled bet-zone-overlay" id="z-passodds" onclick="placeBet('passodds')">
+
     <span style="text-align:center;line-height:1.3;font-size:9px;font-weight:bold;">PASS<br>ODDS</span>
-    <span id="passodds-ratio" style="font-size:13px;font-weight:bold;color:#4aff7a;line-height:1;">â€"</span>
+
+    <span id="passodds-ratio" style="font-size:13px;font-weight:bold;color:#4aff7a;line-height:1;"> - </span>
+
     <span id="passodds-win" style="font-size:8px;color:#aaa;line-height:1;margin-top:1px;"></span>
+
     <span class="bet-chip" id="chip-passodds">0</span>
+
   </div>
+
   <div class="odds-btn disabled bet-zone-overlay" id="z-dontodds" onclick="placeBet('dontodds')">
+
     <span style="text-align:center;line-height:1.3;font-size:9px;font-weight:bold;">LAY<br>ODDS</span>
-    <span id="dontodds-ratio" style="font-size:13px;font-weight:bold;color:#ff8888;line-height:1;">â€"</span>
+
+    <span id="dontodds-ratio" style="font-size:13px;font-weight:bold;color:#ff8888;line-height:1;"> - </span>
+
     <span id="dontodds-win" style="font-size:8px;color:#aaa;line-height:1;margin-top:1px;"></span>
+
     <span class="bet-chip" id="chip-dontodds">0</span>
+
   </div>
+
   <div class="zone bet-zone-overlay" id="z-field" onclick="placeBet('field')">
+
     <span style="font-size:11px;font-weight:bold;">FIELD</span>
-    <span class="fnums">2(2:1) Â· 3 Â· 4 Â· 9 Â· 10 Â· 11 Â· 12(2:1) â€" Loses on 5, 6, 7, 8</span>
+
+    <span class="fnums">2(2:1) . 3 . 4 . 9 . 10 . 11 . 12(2:1)  -  Loses on 5, 6, 7, 8</span>
+
     <span class="bet-chip" id="chip-field">0</span>
+
   </div>
+
   <div class="zone bet-zone-overlay" id="z-passline" onclick="placeBet('passline')">
-    PASS LINE &nbsp;Â·&nbsp; <span style="font-size:10px;color:#aaa;">7/11 wins Â· 2/3/12 loses Â· hit point before 7</span>
+
+    PASS LINE &nbsp;&middot;&nbsp; <span style="font-size:10px;color:#aaa;">7/11 wins . 2/3/12 loses . hit point before 7</span>
+
     <span class="bet-chip" id="chip-passline">0</span>
+
   </div>
+
   <!-- NEW zones -->
+
   <div class="prop-box bet-zone-overlay shape-circle"  id="z-big6"  onclick="placeBet('big6')" style="border-color:rgba(100,255,100,0.35);color:#88ffaa;"><span class="pname">BIG 6</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big6">0</span></div>
+
   <div class="prop-box bet-zone-overlay shape-circle"  id="z-big8"  onclick="placeBet('big8')" style="border-color:rgba(100,255,100,0.35);color:#88ffaa;"><span class="pname">BIG 8</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big8">0</span></div>
+
   <div class="prop-box bet-zone-overlay shape-hex"     id="z-ce"    onclick="placeBet('ce')"   style="border-color:rgba(255,160,50,0.4);color:#ffcc77;"><span class="pname">C&amp;E</span><span class="podds" style="font-size:9px;">C:3:1&middot;E:7:1</span><span class="bet-chip" id="chip-ce">0</span></div>
+
   <div class="prop-box bet-zone-overlay shape-octagon" id="z-world" onclick="placeBet('world')" style="border-color:rgba(200,80,255,0.4);color:#dd99ff;"><span class="pname">WORLD</span><span class="podds" style="font-size:9px;">7:push&middot;2/12:26:5</span><span class="bet-chip" id="chip-world">0</span></div>
+
 </div>
+
+
 
 <!-- Debug toggle button -->
-<button class="dbg-toggle" onclick="toggleDbg()">ðŸ"§ DEBUG</button>
+
+<button class="dbg-toggle" onclick="toggleDbg()">" DEBUG</button>
+
+
 
 <!-- Debug panel -->
+
 <div id="dbgPanel">
-  <h3>ðŸŽ² Zone Editor <span id="dbgSelectedLabel" style="color:#4aff7a;font-size:11px;"></span></h3>
+
+  <h3> Zone Editor <span id="dbgSelectedLabel" style="color:#4aff7a;font-size:11px;"></span></h3>
+
   <div style="font-size:9px;color:#aaa;margin-bottom:6px;">Click any zone to select it. Drag to move. Corner handles to resize.</div>
+
   <label>X <input type="range" id="bz-x" min="0" max="1920" value="20"  oninput="applyBetZone()"> <span class="val" id="bv-x">20</span></label>
+
   <label>Y <input type="range" id="bz-y" min="0" max="1080" value="400" oninput="applyBetZone()"> <span class="val" id="bv-y">400</span></label>
+
   <label>W <input type="range" id="bz-w" min="20" max="800"  value="120" oninput="applyBetZone()"> <span class="val" id="bv-w">120</span></label>
+
   <label>H <input type="range" id="bz-h" min="20" max="400"  value="50"  oninput="applyBetZone()"> <span class="val" id="bv-h">50</span></label>
+
   <label>Scale <input type="range" id="bz-s" min="50" max="300" value="100" oninput="applyBetZone()"> <span class="val" id="bv-s">100</span>%</label>
+
   <label style="margin-top:4px;">Shape
+
     <select id="bz-shape" onchange="applyBetZone()" style="flex:1;background:#222;color:#ffd700;border:1px solid #ffd70055;border-radius:4px;padding:2px;font-size:11px;margin-left:6px;">
+
       <option value="">Rectangle</option>
+
       <option value="shape-rounded">Rounded</option>
+
       <option value="shape-circle">Circle</option>
+
       <option value="shape-diamond">Diamond</option>
+
       <option value="shape-hex">Hexagon</option>
+
       <option value="shape-octagon">Octagon</option>
+
     </select>
+
   </label>
+
   <div style="display:flex;gap:6px;margin-top:8px;">
-    <button onclick="copyBetZones()" style="flex:1;">ðŸ"‹ COPY</button>
-    <button onclick="selBetZonePrev()" style="flex:0.4;">â-€</button>
-    <button onclick="selBetZoneNext()" style="flex:0.4;">â-¶</button>
+
+    <button onclick="copyBetZones()" style="flex:1;">" COPY</button>
+
+    <button onclick="selBetZonePrev()" style="flex:0.4;">-</button>
+
+    <button onclick="selBetZoneNext()" style="flex:0.4;">-</button>
+
   </div>
-  <textarea id="dbgOut" readonly placeholder="Values appear here after COPYâ€¦" style="height:60px;"></textarea>
+
+  <textarea id="dbgOut" readonly placeholder="Values appear here after COPY" style="height:60px;"></textarea>
+
 </div>
 
+
+
 <script>
-// â"€â"€ STATE â"€â"€
+
+// "" STATE ""
+
 let balance = 100000, selectedChip = 100, rolling = false;
+
 let phase = 'comeout', point = null;
+
 let dice = [1,6];
+
 let removeMode = false;   // when true: clicking a bet removes it
+
 let placeOff = false;     // when true: place bets are off for next roll
+
 let rollNet = 0;          // net for current shooter session; resets on 7-out
 
+
+
 // Flat bets
+
 const bets = {
+
   passline:0, dontpass:0, come:0, dontcome:0,
+
   passodds:0, dontodds:0, field:0,
+
   any7:0, anycraps:0, yo:0, two:0, three:0, twelve:0,
+
   place4:0, place5:0, place6:0, place8:0, place9:0, place10:0,
+
   hard4:0, hard6:0, hard8:0, hard10:0,  big6:0, big8:0, ce:0, world:0
+
 };
+
+
 
 // Travelling bets: {4: amount, 5: amount, ...}
+
 const comeBets    = {};  // Come bets on numbers
+
 const comeOdds    = {};  // Odds behind Come bets (true odds, 2:1/3:2/6:5)
+
 const dontCome    = {};  // Don't Come bets on numbers
+
 const dontComeOdds= {};  // Lay odds behind Don't Come bets (inverse)
 
+
+
 // True odds payout rates
+
 const PASS_ODDS  = {4:2, 5:3/2, 6:6/5, 8:6/5, 9:3/2, 10:2};
+
 const LAY_ODDS   = {4:1/2, 5:2/3, 6:5/6, 8:5/6, 9:2/3, 10:1/2};
 
-// 3-4-5x max odds: flat bet Ã- multiplier = max odds allowed
-// Result: max WIN is always 6Ã- your flat bet regardless of point
+
+
+// 3-4-5x max odds: flat bet - multiplier = max odds allowed
+
+// Result: max WIN is always 6- your flat bet regardless of point
+
 const MAX_ODDS_MULT = {4:3, 5:4, 6:5, 8:5, 9:4, 10:3};
-// Don't Pass/Come lay odds max WIN = 3Ã- flat bet (risk more, win less since 7 is favored)
-// Max lay = 3Ã- flat / LAY_ODDS[pt], e.g. 4/10 â†' risk 6Ã- to win 3Ã-
+
+// Don't Pass/Come lay odds max WIN = 3- flat bet (risk more, win less since 7 is favored)
+
+// Max lay = 3- flat / LAY_ODDS[pt], e.g. 4/10 ' risk 6- to win 3-
+
 function maxLayBet(flatBet, num){ return Math.round(flatBet * 3 / LAY_ODDS[num]); }
 
-// â"€â"€ AUDIO â"€â"€
+
+
+// "" AUDIO ""
+
 const bgAmbience = document.getElementById('bgAmbience');
+
 bgAmbience.volume = 0.4;
+
 let _muted = false;
-function toggleMute(){ _muted=!_muted; bgAmbience.muted=_muted; document.getElementById('muteBtn').textContent=_muted?'ðŸ"‡':'ðŸ"Š'; }
+
+function toggleMute(){ _muted=!_muted; bgAmbience.muted=_muted; document.getElementById('muteBtn').textContent=_muted?'"':'"'; }
+
 document.addEventListener('pointerdown',()=>{ bgAmbience.play().catch(()=>{}); },{once:true});
 
+
+
 let _actx=null;
+
 function getAC(){ if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)(); if(_actx.state==='suspended')_actx.resume(); return _actx; }
+
 function playThud(){ try{ const ctx=getAC(),sr=ctx.sampleRate; for(let d=0;d<2;d++){ const delay=d*0.06,dur=0.09,buf=ctx.createBuffer(1,Math.floor(sr*dur),sr),data=buf.getChannelData(0); for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/(sr*dur*0.35)); const src=ctx.createBufferSource();src.buffer=buf; const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=300; const g=ctx.createGain();g.gain.setValueAtTime(0.55,ctx.currentTime+delay); src.connect(hp);hp.connect(g);g.connect(ctx.destination);src.start(ctx.currentTime+delay); } }catch(e){} }
+
 function playWin(){ try{ const ctx=getAC(); [[523,0],[659,0.1],[784,0.22],[1047,0.36]].forEach(([f,t])=>{ const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='triangle';o.frequency.value=f; const s=ctx.currentTime+t; g.gain.setValueAtTime(0.2,s);g.gain.exponentialRampToValueAtTime(0.001,s+0.22);o.start(s);o.stop(s+0.22); }); }catch(e){} }
+
 function playLose(){ try{ const ctx=getAC(); [[300,0],[200,0.14],[150,0.28]].forEach(([f,t])=>{ const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';o.frequency.value=f; const s=ctx.currentTime+t; g.gain.setValueAtTime(0.14,s);g.gain.exponentialRampToValueAtTime(0.001,s+0.18);o.start(s);o.stop(s+0.18); }); }catch(e){} }
 
-// â"€â"€ CHIP SELECT â"€â"€
+
+
+// "" CHIP SELECT ""
+
 function selectChip(v){ selectedChip=v; document.querySelectorAll('.chip-btn').forEach(b=>b.classList.remove('selected')); ({100:'chip-sel-100',500:'chip-sel-500',1000:'chip-sel-1k',5000:'chip-sel-5k',10000:'chip-sel-10k'})[v] && document.getElementById(({100:'chip-sel-100',500:'chip-sel-500',1000:'chip-sel-1k',5000:'chip-sel-5k',10000:'chip-sel-10k'})[v])?.classList.add('selected'); updateUI(); }
 
-// â"€â"€ TOGGLE MODES â"€â"€
+
+
+// "" TOGGLE MODES ""
+
 function toggleRemove(){
+
   removeMode=!removeMode;
+
   document.getElementById('btnRemove').classList.toggle('active',removeMode);
-  if(removeMode) showMsg('TAKE DOWN mode â€" click any bet to remove it','neutral');
+
+  if(removeMode) showMsg('TAKE DOWN mode  -  click any bet to remove it','neutral');
+
   else showMsg('Bet mode restored','neutral');
+
 }
+
 function togglePlaceOff(){
+
   placeOff=!placeOff;
+
   document.getElementById('btnOff').classList.toggle('active',placeOff);
-  showMsg(placeOff?'Place bets OFF for next roll â€" they will not win or lose':'Place bets back ON','neutral');
+
+  showMsg(placeOff?'Place bets OFF for next roll  -  they will not win or lose':'Place bets back ON','neutral');
+
   updateZoneStates();
+
 }
 
-// â"€â"€ PLACE BET â"€â"€
+
+
+// "" PLACE BET ""
+
 function placeBet(id){
+
   if(rolling) return;
+
   if(removeMode){ removeBet(id); return; }
+
   if((id==='passline'||id==='dontpass') && phase==='point'){ showMsg("Pass/Don't Pass: come-out only",'neutral'); return; }
+
   if((id==='come'||id==='dontcome') && phase==='comeout'){ showMsg("Come bets: after point is set only",'neutral'); return; }
+
   if(id==='passodds'){
+
     if(!bets.passline||phase==='comeout'){ showMsg('Need Pass Line bet + point set','neutral'); return; }
+
     const maxO = bets.passline * MAX_ODDS_MULT[point];
-    if(bets.passodds >= maxO){ showMsg(`Max Pass odds: ${fmt(maxO)}g (${MAX_ODDS_MULT[point]}Ã- flat bet)`,'neutral'); return; }
+
+    if(bets.passodds >= maxO){ showMsg(`Max Pass odds: ${fmt(maxO)}g (${MAX_ODDS_MULT[point]}- flat bet)`,'neutral'); return; }
+
     if(bets.passodds + selectedChip > maxO){ selectedChip = maxO - bets.passodds; }
+
   }
+
   if(['big6','big8','ce','world'].includes(id)){
+
     if(selectedChip>balance){ showMsg('Not enough gold!','lose'); return; }
+
     bets[id]=(bets[id]||0)+selectedChip; balance-=selectedChip;
+
     updateUI(); updateZoneStates(); return;
+
   }
+
   if(id==='dontodds'){
+
     if(!bets.dontpass||phase==='comeout'){ showMsg("Need Don't Pass bet + point set",'neutral'); return; }
+
     const maxO = maxLayBet(bets.dontpass, point);
+
     if(bets.dontodds >= maxO){ showMsg(`Max Lay odds reached: ${fmt(maxO)}g`,'neutral'); return; }
+
     if(bets.dontodds + selectedChip > maxO){ selectedChip = maxO - bets.dontodds; }
+
   }
+
   if(selectedChip > balance){ showMsg('Not enough gold!','lose'); return; }
+
   bets[id]=(bets[id]||0)+selectedChip; balance-=selectedChip;
+
   updateUI(); updateZoneStates();
+
 }
 
-// â"€â"€ REMOVE BET â"€â"€
+
+
+// "" REMOVE BET ""
+
 function removeBet(id){
+
   // Pass Line cannot be taken down after point is established (house rule)
+
   if(id==='passline' && phase==='point'){ showMsg("Pass Line can't be taken down after point is set",'neutral'); return; }
+
   // Come bets on numbers can't be taken down
+
   if(id.startsWith('place') || id==='passodds' || id==='dontodds' || id==='passline' || id==='dontpass' || id==='come' || id==='dontcome' || id.startsWith('hard') || id==='field' || id==='any7' || id==='anycraps' || id==='yo' || id==='two' || id==='three' || id==='twelve' || ['big6','big8','ce','world'].includes(id)){
+
     const b=bets[id]||0; if(!b){ showMsg('No bet to remove','neutral'); return; }
+
     balance+=b; bets[id]=0;
+
     updateUI(); updateZoneStates();
-    showMsg(`${id} removed â€" ${fmt(b)}g returned`,'neutral');
+
+    showMsg(`${id} removed  -  ${fmt(b)}g returned`,'neutral');
+
   }
+
 }
+
 function removeComeOdds(num){ if(!comeOdds[num]) return; balance+=comeOdds[num]; delete comeOdds[num]; updateUI(); updateZoneStates(); showMsg(`Come ${num} odds removed`,'neutral'); }
+
 function removeDCOdds(num)  { if(!dontComeOdds[num]) return; balance+=dontComeOdds[num]; delete dontComeOdds[num]; updateUI(); updateZoneStates(); showMsg(`DC ${num} lay odds removed`,'neutral'); }
+
 function removeComeBet(num) { if(!comeBets[num]) return; balance+=comeBets[num]+(comeOdds[num]||0); delete comeBets[num]; delete comeOdds[num]; updateUI(); updateZoneStates(); showMsg(`Come ${num} removed`,'neutral'); }
+
 function removeDCBet(num)   { if(!dontCome[num]) return; balance+=dontCome[num]+(dontComeOdds[num]||0); delete dontCome[num]; delete dontComeOdds[num]; updateUI(); updateZoneStates(); showMsg(`DC ${num} removed`,'neutral'); }
 
-// â"€â"€ COME ODDS (click the come-bet indicator on a number box) â"€â"€
+
+
+// "" COME ODDS (click the come-bet indicator on a number box) ""
+
 function addComeOdds(num){
+
   if(rolling) return;
+
   if(removeMode){ removeMode ? (comeOdds[num] ? removeComeOdds(num) : removeComeBet(num)) : null; return; }
+
   if(!comeBets[num]){ showMsg(`No Come bet on ${num}`,'neutral'); return; }
+
   const maxO = comeBets[num] * MAX_ODDS_MULT[num];
+
   const cur = comeOdds[num]||0;
-  if(cur >= maxO){ showMsg(`Max Come odds on ${num}: ${fmt(maxO)}g (${MAX_ODDS_MULT[num]}Ã- Come bet)`,'neutral'); return; }
+
+  if(cur >= maxO){ showMsg(`Max Come odds on ${num}: ${fmt(maxO)}g (${MAX_ODDS_MULT[num]}- Come bet)`,'neutral'); return; }
+
   let amt = Math.min(selectedChip, maxO - cur);
+
   if(amt > balance){ showMsg('Not enough gold!','lose'); return; }
+
   comeOdds[num] = cur + amt; balance -= amt;
-  showMsg(`Come odds on ${num}: ${fmtChip(comeOdds[num])}g â€" pays ${oddsLbl(num)} (max ${fmt(maxO)}g)`,'neutral');
+
+  showMsg(`Come odds on ${num}: ${fmtChip(comeOdds[num])}g  -  pays ${oddsLbl(num)} (max ${fmt(maxO)}g)`,'neutral');
+
   updateUI(); updateZoneStates();
+
 }
 
-// â"€â"€ DON'T COME LAY ODDS (click the DC indicator on a number box) â"€â"€
+
+
+// "" DON'T COME LAY ODDS (click the DC indicator on a number box) ""
+
 function addDCOdds(num){
+
   if(rolling) return;
+
   if(removeMode){ dontComeOdds[num] ? removeDCOdds(num) : removeDCBet(num); return; }
+
   if(!dontCome[num]){ showMsg(`No Don't Come bet on ${num}`,'neutral'); return; }
+
   const maxO = maxLayBet(dontCome[num], num);
+
   const cur = dontComeOdds[num]||0;
+
   if(cur >= maxO){ showMsg(`Max DC lay odds on ${num}: ${fmt(maxO)}g`,'neutral'); return; }
+
   let amt = Math.min(selectedChip, maxO - cur);
+
   if(amt > balance){ showMsg('Not enough gold!','lose'); return; }
+
   dontComeOdds[num] = cur + amt; balance -= amt;
+
   showMsg(`DC lay odds on ${num}: ${fmtChip(dontComeOdds[num])}g`,'neutral');
+
   updateUI(); updateZoneStates();
+
 }
 
-function oddsLbl(n){ return {4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'}[n]||'â€"'; }
 
-// â"€â"€ CLEAR BETS â"€â"€
+
+function oddsLbl(n){ return {4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'}[n]||' - '; }
+
+
+
+// "" CLEAR BETS ""
+
 function clearBets(){
+
   if(rolling) return;
+
   let refund=0;
+
   for(const k in bets){ refund+=bets[k]; bets[k]=0; }
+
   for(const k in comeBets)  { refund+=comeBets[k];     delete comeBets[k]; }
+
   for(const k in comeOdds)  { refund+=comeOdds[k];     delete comeOdds[k]; }
+
   for(const k in dontCome)  { refund+=dontCome[k];     delete dontCome[k]; }
+
   for(const k in dontComeOdds){ refund+=dontComeOdds[k]; delete dontComeOdds[k]; }
+
   balance+=refund; updateUI(); updateZoneStates();
+
   showMsg('Bets cleared','neutral');
+
 }
 
-// â"€â"€ ROLL â"€â"€
+
+
+// "" ROLL ""
+
 function rollDice(){
+
   if(rolling) return;
+
   const total=Object.values(bets).reduce((a,b)=>a+b,0)+Object.values(comeBets).reduce((a,b)=>a+b,0)+Object.values(comeOdds).reduce((a,b)=>a+b,0)+Object.values(dontCome).reduce((a,b)=>a+b,0)+Object.values(dontComeOdds).reduce((a,b)=>a+b,0);
+
   if(total===0){ showMsg('Place a bet first!','neutral'); return; }
+
   rolling=true;
+
   document.getElementById('btnRoll').disabled=true; document.getElementById('btnClear').disabled=true;
+
   document.getElementById('diceTotal').textContent='';
+
   document.getElementById('dieShadow1').style.opacity='0'; document.getElementById('dieShadow2').style.opacity='0';
+
   dice[0]=Math.floor(Math.random()*6)+1; dice[1]=Math.floor(Math.random()*6)+1;
+
   drawDie('die1',dice[0]); drawDie('die2',dice[1]);
+
   const rot1=360*(3+Math.floor(Math.random()*3))+Math.floor(Math.random()*4)*90;
+
   const rot2=-(360*(2+Math.floor(Math.random()*3))+Math.floor(Math.random()*4)*90);
+
   const w1=document.getElementById('dieWrap1'),w2=document.getElementById('dieWrap2');
+
   w1.style.setProperty('--rot1',rot1+'deg'); w2.style.setProperty('--rot2',rot2+'deg');
+
   w1.classList.remove('throwing1','throwing2'); w2.classList.remove('throwing1','throwing2'); void w1.offsetWidth;
+
   w1.classList.add('throwing1'); w2.classList.add('throwing2');
+
   setTimeout(()=>{ playThud(); },380);
+
   setTimeout(()=>{ document.getElementById('diceTotal').textContent=dice[0]+dice[1]; document.getElementById('dieShadow1').style.opacity='1'; document.getElementById('dieShadow2').style.opacity='1'; },640);
+
   setTimeout(()=>{ resolveRoll(); },850);
+
 }
 
-// â"€â"€ RESOLVE â"€â"€
+
+
+// "" RESOLVE ""
+
 function resolveRoll(){
+
   const d1=dice[0],d2=dice[1],total=d1+d2,isHard=(d1===d2);
+
   let winTotal=0,lostTotal=0,payouts=[],losses=[];
 
+
+
   function collect(id,mult,label){ const b=bets[id]||0; if(!b) return; const p=Math.round(b*mult); balance+=b+p; bets[id]=0; winTotal+=p; payouts.push(`${label} +${fmt(p)}g`); }
+
   function lose(id,label){ const b=bets[id]||0; if(!b) return; bets[id]=0; lostTotal+=b; losses.push(label||id); }
+
   function push(id,label){ const b=bets[id]||0; if(!b) return; balance+=b; bets[id]=0; if(label) payouts.push(`${label} push`); }
 
-  // â"€â"€ Single-roll bets â"€â"€
+
+
+  // "" Single-roll bets ""
+
   if(bets.field){ if([2,3,4,9,10,11,12].includes(total)){ collect('field',(total===2||total===12)?2:1,'Field'); } else { lose('field','Field'); } }
+
   if(bets.any7){     if(total===7)               collect('any7',4,'Any 7');      else lose('any7','Any 7'); }
+
   if(bets.anycraps){ if([2,3,12].includes(total)) collect('anycraps',7,'Any Craps'); else lose('anycraps','Any Craps'); }
+
   if(bets.yo){       if(total===11)               collect('yo',15,'Yo');          else lose('yo','Yo'); }
+
   if(bets.two){      if(total===2)                collect('two',30,'Snake Eyes');  else lose('two','2'); }
+
   if(bets.three){    if(total===3)                collect('three',15,'Ace Deuce'); else lose('three','3'); }
+
   if(bets.twelve){   if(total===12)               collect('twelve',30,'Boxcars');  else lose('twelve','12'); }
 
-  // â"€â"€ Big 6 / Big 8 (pays 1:1, loses on 7, push otherwise) â"€â"€
+
+
+  // "" Big 6 / Big 8 (pays 1:1, loses on 7, push otherwise) ""
+
   if(bets.big6){ if(total===6) collect('big6',1,'Big 6'); else if(total===7) lose('big6','Big 6'); }
+
   if(bets.big8){ if(total===8) collect('big8',1,'Big 8'); else if(total===7) lose('big8','Big 8'); }
-  // â"€â"€ C&E (2/3/12 pays 3:1, 11 pays 7:1, else lose) â"€â"€
+
+  // "" C&E (2/3/12 pays 3:1, 11 pays 7:1, else lose) ""
+
   if(bets.ce){
+
     if([2,3,12].includes(total)) collect('ce',3,'C&E Craps');
+
     else if(total===11) collect('ce',7,'C&E Eleven');
+
     else lose('ce','C&E');
-  }
-  // â"€â"€ World (7=push, 2/12 pay 26:5, 3/11 pay 11:5, else lose) â"€â"€
-  if(bets.world){
-    if(total===7){ /* push â€" no win no loss */ }
-    else if([2,12].includes(total)) collect('world',26/5,'World');
-    else if([3,11].includes(total)) collect('world',11/5,'World');
-    else lose('world','World');
+
   }
 
-  // â"€â"€ Hardways â"€â"€
+  // "" World (7=push, 2/12 pay 26:5, 3/11 pay 11:5, else lose) ""
+
+  if(bets.world){
+
+    if(total===7){ /* push  -  no win no loss */ }
+
+    else if([2,12].includes(total)) collect('world',26/5,'World');
+
+    else if([3,11].includes(total)) collect('world',11/5,'World');
+
+    else lose('world','World');
+
+  }
+
+
+
+  // "" Hardways ""
+
   [[4,7],[6,9],[8,9],[10,7]].forEach(([n,pay])=>{
+
     const k='hard'+n; if(!bets[k]) return;
+
     if(total===n&&isHard) collect(k,pay,'Hard '+n);
+
     else if(total===7||(total===n&&!isHard)) lose(k,'Hard '+n);
+
   });
 
-  // â"€â"€ Place bets (OFF during come-out OR manual placeOff) â"€â"€
+
+
+  // "" Place bets (OFF during come-out OR manual placeOff) ""
+
   if(phase==='point' && !placeOff){
+
     const pp={4:[9,5],5:[7,5],6:[7,6],8:[7,6],9:[7,5],10:[9,5]};
+
     [4,5,6,8,9,10].forEach(n=>{
+
       const k='place'+n; if(!bets[k]) return;
+
       if(total===n){ const [p,q]=pp[n]; collect(k,p/q,'Place '+n); }
+
       else if(total===7) lose(k,'Place '+n);
+
     });
+
   } else if(phase==='point' && placeOff && total===7){
+
     // Bets OFF: place bets don't win or lose, but refund them on 7 (shooter still out)
-    [4,5,6,8,9,10].forEach(n=>{ const b=bets['place'+n]||0; if(b){ balance+=b; bets['place'+n]=0; payouts.push(`Place ${n} OFF â€" refunded`); } });
+
+    [4,5,6,8,9,10].forEach(n=>{ const b=bets['place'+n]||0; if(b){ balance+=b; bets['place'+n]=0; payouts.push(`Place ${n} OFF  -  refunded`); } });
+
   }
 
-  // â"€â"€ Travelling Come bets + Come Odds â"€â"€
+
+
+  // "" Travelling Come bets + Come Odds ""
+
   for(const num of Object.keys(comeBets)){
+
     const n=parseInt(num), cb=comeBets[n]||0, co=comeOdds[n]||0;
+
     if(total===n){
+
       balance+=cb*2; winTotal+=cb; payouts.push(`Come ${n} +${fmt(cb)}g`);
+
       if(co){ const w=Math.round(co*PASS_ODDS[n]); balance+=co+w; winTotal+=w; payouts.push(`Come ${n} Odds +${fmt(w)}g`); delete comeOdds[n]; }
+
       delete comeBets[n];
+
     } else if(total===7){
+
       lostTotal+=cb+(co||0); losses.push(`Come ${n}`);
+
       delete comeBets[n]; delete comeOdds[n];
+
     }
+
   }
 
-  // â"€â"€ Travelling Don't Come bets + Lay Odds â"€â"€
+
+
+  // "" Travelling Don't Come bets + Lay Odds ""
+
   for(const num of Object.keys(dontCome)){
+
     const n=parseInt(num), db=dontCome[n]||0, dco=dontComeOdds[n]||0;
+
     if(total===7){
+
       balance+=db*2; winTotal+=db; payouts.push(`DC ${n} +${fmt(db)}g`);
+
       if(dco){ const w=Math.round(dco*LAY_ODDS[n]); balance+=dco+w; winTotal+=w; payouts.push(`DC ${n} Odds +${fmt(w)}g`); delete dontComeOdds[n]; }
+
       delete dontCome[n];
+
     } else if(total===n){
+
       lostTotal+=db+(dco||0); losses.push(`DC ${n}`);
+
       delete dontCome[n]; delete dontComeOdds[n];
+
     }
+
   }
 
-  // â"€â"€ New Come bet this roll â"€â"€
+
+
+  // "" New Come bet this roll ""
+
   if(bets.come && phase==='point'){
+
     if(total===7||total===11){ balance+=bets.come*2; winTotal+=bets.come; payouts.push(`Come +${fmt(bets.come)}g`); bets.come=0; }
+
     else if([2,3,12].includes(total)){ lose('come','Come'); }
+
     else { comeBets[total]=(comeBets[total]||0)+bets.come; bets.come=0; }
+
   }
 
-  // â"€â"€ New Don't Come bet this roll â"€â"€
+
+
+  // "" New Don't Come bet this roll ""
+
   if(bets.dontcome && phase==='point'){
+
     if(total===2||total===3){ balance+=bets.dontcome*2; winTotal+=bets.dontcome; payouts.push(`DC +${fmt(bets.dontcome)}g`); bets.dontcome=0; }
+
     else if(total===12){ push('dontcome','DC push'); }
+
     else if(total===7||total===11){ lose('dontcome',"DC"); }
+
     else { dontCome[total]=(dontCome[total]||0)+bets.dontcome; bets.dontcome=0; }
+
   }
 
-  // â"€â"€ Main Pass / Don't Pass â"€â"€
+
+
+  // "" Main Pass / Don't Pass ""
+
   const NAMES={4:'Little Joe',5:'Fever Five',6:'Six',8:'Eighter',9:'Nina',10:'Big Dick'};
+
   if(phase==='comeout'){
+
     if(total===7||total===11){
+
       collect('passline',1,'Pass Line'); lose('dontpass',"Don't Pass");
-      showMsg(total===7?'ðŸŽ² SEVEN â€" Front line winner! Pay the line!':'ðŸŽ² YO-ELEVEN â€" Six-five, no jive! Winner!','win');
+
+      showMsg(total===7?' SEVEN  -  Front line winner! Pay the line!':' YO-ELEVEN  -  Six-five, no jive! Winner!','win');
+
     } else if(total===2){
+
       lose('passline','Pass Line'); collect('dontpass',1,"Don't Pass");
-      showMsg("ðŸŽ² SNAKE EYES â€" Two craps two! Take the pass, pay the don't!",'lose');
+
+      showMsg(" SNAKE EYES  -  Two craps two! Take the pass, pay the don't!",'lose');
+
     } else if(total===3){
+
       lose('passline','Pass Line'); collect('dontpass',1,"Don't Pass");
-      showMsg("ðŸŽ² ACE DEUCE â€" Three craps three!",'lose');
+
+      showMsg(" ACE DEUCE  -  Three craps three!",'lose');
+
     } else if(total===12){
+
       lose('passline','Pass Line'); push('dontpass',"Don't Pass push");
-      showMsg("ðŸŽ² BOXCARS â€" Twelve craps twelve! Take the pass, don't push!",'push');
+
+      showMsg(" BOXCARS  -  Twelve craps twelve! Take the pass, don't push!",'push');
+
     } else {
+
       point=total; phase='point';
-      showMsg(`ðŸŽ² ${total} â€" ${NAMES[total]||total}! POINT IS ${total}!`,'neutral');
+
+      showMsg(` ${total}  -  ${NAMES[total]||total}! POINT IS ${total}!`,'neutral');
+
       showPayouts(payouts,losses,winTotal,lostTotal,'point');
+
       updatePuck(); updateZoneStates(); updateUI(); rolling=false;
+
       document.getElementById('btnRoll').disabled=false; document.getElementById('btnClear').disabled=false;
+
       return;
+
     }
+
   } else {
+
     if(total===point){
+
       const pb=bets.passline;
+
       if(pb){ balance+=pb*2; winTotal+=pb; payouts.push(`Pass Line +${fmt(pb)}g`); bets.passline=0; }
+
       if(bets.passodds){ const w=Math.round(bets.passodds*PASS_ODDS[point]); balance+=bets.passodds+w; winTotal+=w; payouts.push(`Pass Odds +${fmt(w)}g`); bets.passodds=0; }
+
       lose('dontpass',"Don't Pass"); lose('dontodds',"Don't Odds");
-      showMsg(`ðŸŽ² ${total} â€" WINNER! POINT ${point} MADE!`,'win');
+
+      showMsg(` ${total}  -  WINNER! POINT ${point} MADE!`,'win');
+
       point=null; phase='comeout';
+
     } else if(total===7){
+
       lose('passline','Pass Line'); lose('passodds','Pass Odds');
+
       const db=bets.dontpass;
+
       if(db){ balance+=db*2; winTotal+=db; payouts.push(`Don't Pass +${fmt(db)}g`); bets.dontpass=0; }
+
       if(bets.dontodds){ const w=Math.round(bets.dontodds*LAY_ODDS[point]); balance+=bets.dontodds+w; winTotal+=w; payouts.push(`Lay Odds +${fmt(w)}g`); bets.dontodds=0; }
+
       [4,5,6,8,9,10].forEach(n=>{ lose('place'+n, 'Place '+n); });
-      showMsg("ðŸŽ² SEVEN OUT â€" Seven out! Line away!",'lose');
+
+      showMsg(" SEVEN OUT  -  Seven out! Line away!",'lose');
+
       point=null; phase='comeout'; rollNet=0;
+
     } else {
+
       const calls={2:'Two',3:'Ace Deuce',4:'Little Joe',5:'Five',6:isHard?'Hard Six':'Six easy',8:isHard?'Hard Eight':'Eight easy',9:'Nine',10:isHard?'Hard Ten':'Ten easy',11:'Yo',12:'Boxcars'};
-      showMsg(`ðŸŽ² ${total} â€" ${calls[total]||total}. Roll again!`,'neutral');
+
+      showMsg(` ${total}  -  ${calls[total]||total}. Roll again!`,'neutral');
+
     }
+
   }
+
+
 
   if(winTotal>0) playWin(); else if(lostTotal>0) playLose();
+
   showPayouts(payouts,losses,winTotal,lostTotal,'');
+
   // Reset one-shot flags
+
   if(placeOff){ placeOff=false; document.getElementById('btnOff').classList.remove('active'); }
+
   if(removeMode){ removeMode=false; document.getElementById('btnRemove').classList.remove('active'); }
+
   updatePuck(); updateZoneStates(); updateUI(); rolling=false;
+
   document.getElementById('btnRoll').disabled=false; document.getElementById('btnClear').disabled=false;
+
 }
+
+
 
 function showPayouts(wins,losses,winTotal,lostTotal,context){
+
   rollNet += winTotal - lostTotal;
+
   updateUI();
+
   const bar=document.getElementById('payoutBar');
+
   if(!bar) return;
-  if(wins.length===0 && losses.length===0){ bar.textContent='â€"'; bar.className='payout-bar empty'; return; }
+
+  if(wins.length===0 && losses.length===0){ bar.textContent=' - '; bar.className='payout-bar empty'; return; }
+
   bar.innerHTML='';
+
   if(wins.length){
+
     const s=document.createElement('span');
+
     s.style.cssText='color:#4aff7a;';
-    s.textContent='âœ… '+wins.join(' Â· ');
+
+    s.textContent=' '+wins.join(' . ');
+
     bar.appendChild(s);
+
   }
+
   if(losses.length){
+
     const s=document.createElement('span');
+
     s.style.cssText='color:#ff6666;';
-    s.textContent='âŒ Lost: '+losses.join(', ');
+
+    s.textContent=' Lost: '+losses.join(', ');
+
     bar.appendChild(s);
+
   }
+
   const total=document.createElement('span');
+
   total.style.cssText='font-size:22px;padding:0 6px;';
+
   if(winTotal>0 && lostTotal>0){
+
     const net=winTotal-lostTotal;
+
     total.style.color=net>=0?'#4aff7a':'#ff5555';
+
     total.textContent=(net>=0?'NET +':'NET -')+fmt(Math.abs(net))+'g';
+
   } else if(winTotal>0){
+
     total.style.color='#4aff7a';
+
     total.textContent='WIN +'+fmt(winTotal)+'g';
+
   } else {
+
     total.style.color='#ff5555';
+
     total.textContent='LOST -'+fmt(lostTotal)+'g';
+
   }
+
   bar.appendChild(total);
+
   bar.className='payout-bar '+(winTotal>lostTotal?'show-win':winTotal<lostTotal?'show-lose':'show-push');
+
 }
 
-// â"€â"€ UI â"€â"€
+
+
+// "" UI ""
+
 function updateUI(){
+
   document.getElementById('balDisplay').textContent=fmt(balance);
+
   const tb=Object.values(bets).reduce((a,b)=>a+b,0)+Object.values(comeBets).reduce((a,b)=>a+b,0)+Object.values(comeOdds).reduce((a,b)=>a+b,0)+Object.values(dontCome).reduce((a,b)=>a+b,0)+Object.values(dontComeOdds).reduce((a,b)=>a+b,0);
+
   document.getElementById('betDisplay').textContent=fmt(tb);
+
   const nd=document.getElementById('netDisplay');
+
   nd.textContent=(rollNet>=0?'+':'')+fmt(rollNet)+'g'; nd.style.color=rollNet>0?'#4aff7a':rollNet<0?'#ff4a4a':'#ffd700';
 
+
+
   const chipMap={passline:'chip-passline',dontpass:'chip-dontpass',come:'chip-come',dontcome:'chip-dontcome',passodds:'chip-passodds',dontodds:'chip-dontodds',field:'chip-field',any7:'chip-any7',anycraps:'chip-anycraps',yo:'chip-yo',two:'chip-two',three:'chip-three',twelve:'chip-twelve',place4:'chip-place4',place5:'chip-place5',place6:'chip-place6',place8:'chip-place8',place9:'chip-place9',place10:'chip-place10',hard4:'chip-hard4',hard6:'chip-hard6',hard8:'chip-hard8',hard10:'chip-hard10',big6:'chip-big6',big8:'chip-big8',ce:'chip-ce',world:'chip-world'};
+
   for(const[k,id] of Object.entries(chipMap)){ const el=document.getElementById(id);if(!el)continue; const a=bets[k]||0; el.textContent=fmtChip(a); el.parentElement.classList.toggle('has-bet',a>0); }
 
+
+
   // Come bet indicators on number boxes
+
   [4,5,6,8,9,10].forEach(n=>{
+
     const cb=comeBets[n]||0, co=comeOdds[n]||0;
+
     const dc=dontCome[n]||0, dco=dontComeOdds[n]||0;
+
     const elCB=document.getElementById('ci-come'+n);
+
     const elCO=document.getElementById('ci-codds'+n);
+
     const elDC=document.getElementById('ci-dc'+n);
+
     const elDCO=document.getElementById('ci-dcodds'+n);
+
     const oRatio={4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'}[n]||'';
+
     const lRatio={4:'1:2',5:'2:3',6:'5:6',8:'5:6',9:'2:3',10:'1:2'}[n]||'';
+
     if(elCB){
+
       if(cb){
-        const hint = co ? `C:${fmtChip(cb)} +${fmtChip(co)}` : `C:${fmtChip(cb)} Â· ${oRatio} odds`;
+
+        const hint = co ? `C:${fmtChip(cb)} +${fmtChip(co)}` : `C:${fmtChip(cb)} . ${oRatio} odds`;
+
         elCB.textContent=hint; elCB.style.display='block';
+
       } else { elCB.style.display='none'; }
+
     }
-    if(elCO){ elCO.textContent=co?`Odds:${fmtChip(co)} â†' +${fmtChip(Math.round(co*PASS_ODDS[n]))}g`:''; elCO.style.display=co?'block':'none'; }
+
+    if(elCO){ elCO.textContent=co?`Odds:${fmtChip(co)} ' +${fmtChip(Math.round(co*PASS_ODDS[n]))}g`:''; elCO.style.display=co?'block':'none'; }
+
     if(elDC){
+
       if(dc){
-        const hint = dco ? `DC:${fmtChip(dc)} +${fmtChip(dco)}` : `DC:${fmtChip(dc)} Â· ${lRatio} lay`;
+
+        const hint = dco ? `DC:${fmtChip(dc)} +${fmtChip(dco)}` : `DC:${fmtChip(dc)} . ${lRatio} lay`;
+
         elDC.textContent=hint; elDC.style.display='block';
+
       } else { elDC.style.display='none'; }
+
     }
-    if(elDCO){ elDCO.textContent=dco?`Lay:${fmtChip(dco)} â†' +${fmtChip(Math.round(dco*LAY_ODDS[n]))}g`:''; elDCO.style.display=dco?'block':'none'; }
+
+    if(elDCO){ elDCO.textContent=dco?`Lay:${fmtChip(dco)} ' +${fmtChip(Math.round(dco*LAY_ODDS[n]))}g`:''; elDCO.style.display=dco?'block':'none'; }
+
   });
+
+
 
   // Odds labels + projected payout
+
   const ratioLbl={4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'};
+
   const layLbl  ={4:'1:2',5:'2:3',6:'5:6',8:'5:6',9:'2:3',10:'1:2'};
+
   const pratio = document.getElementById('passodds-ratio');
+
   const pwin   = document.getElementById('passodds-win');
+
   const dratio = document.getElementById('dontodds-ratio');
+
   const dwin   = document.getElementById('dontodds-win');
-  if(pratio){ pratio.textContent = point ? ratioLbl[point] : 'â€"'; }
+
+  if(pratio){ pratio.textContent = point ? ratioLbl[point] : ' - '; }
+
   if(pwin){
+
     if(point && bets.passline){
+
       const maxO = bets.passline * MAX_ODDS_MULT[point];
+
       const rem = maxO - (bets.passodds||0);
-      if(bets.passodds){ const w=Math.round(bets.passodds*PASS_ODDS[point]); pwin.textContent=`+${fmtChip(w)}g Â· ${fmtChip(rem)} left`; }
+
+      if(bets.passodds){ const w=Math.round(bets.passodds*PASS_ODDS[point]); pwin.textContent=`+${fmtChip(w)}g . ${fmtChip(rem)} left`; }
+
       else { pwin.textContent=`max ${fmtChip(maxO)}g (${MAX_ODDS_MULT[point]}x)`; }
+
     } else { pwin.textContent=''; }
+
   }
-  if(dratio){ dratio.textContent = point ? layLbl[point] : 'â€"'; }
+
+  if(dratio){ dratio.textContent = point ? layLbl[point] : ' - '; }
+
   if(dwin){
+
     if(point && bets.dontpass){
+
       const maxO = maxLayBet(bets.dontpass, point);
+
       const rem = maxO - (bets.dontodds||0);
-      if(bets.dontodds){ const w=Math.round(bets.dontodds*LAY_ODDS[point]); dwin.textContent=`+${fmtChip(w)}g Â· ${fmtChip(rem)} left`; }
+
+      if(bets.dontodds){ const w=Math.round(bets.dontodds*LAY_ODDS[point]); dwin.textContent=`+${fmtChip(w)}g . ${fmtChip(rem)} left`; }
+
       else { dwin.textContent=`max ${fmtChip(maxO)}g`; }
+
     } else { dwin.textContent=''; }
+
   }
+
 }
+
+
 
 function updateZoneStates(){
+
   const isPoint=phase==='point';
+
   setDisabled('z-passline',isPoint); setDisabled('z-dontpass',isPoint);
+
   setDisabled('z-come',!isPoint);    setDisabled('z-dontcome',!isPoint);
+
   const po=isPoint&&bets.passline>0, dpo=isPoint&&bets.dontpass>0;
+
   setDisabled('z-passodds',!po); setDisabled('z-dontodds',!dpo);
+
   document.getElementById('z-passodds')?.classList.toggle('available',po&&!bets.passodds);
+
   document.getElementById('z-dontodds')?.classList.toggle('available',dpo&&!bets.dontodds);
+
   [4,5,6,8,9,10].forEach(n=>{ const o=document.getElementById('off'+n); if(o) o.style.display=(!isPoint||placeOff)?'block':'none'; });
+
 }
+
+
 
 function updatePuck(){
+
   [4,5,6,8,9,10].forEach(n=>{
+
     const p=document.getElementById('puck'+n); if(!p) return;
+
     if(point===n){ p.classList.add('on');p.classList.remove('off');p.textContent='ON'; }
+
     else{ p.classList.add('off');p.classList.remove('on');p.textContent=''; }
+
     const z=document.getElementById('z-place'+n);
+
     z?.classList.toggle('is-point',point===n);
+
     // has-bet for num-zone
+
     z?.classList.toggle('has-bet',(bets['place'+n]||0)>0);
+
   });
+
   document.getElementById('pointDisp').textContent=point?`POINT: ${point}`:'COME-OUT ROLL';
+
 }
+
+
 
 function setDisabled(id,v){ document.getElementById(id)?.classList.toggle('disabled',v); }
+
 function showMsg(txt,type){ const el=document.getElementById('msgBox'); el.textContent=txt; el.className='msg-box '+type; el.style.animation='none'; el.offsetHeight; el.style.animation=''; }
+
 function fmt(n){ return Math.round(n).toLocaleString(); }
+
 function fmtChip(n){ if(!n)return''; if(n>=10000)return(n/1000).toFixed(0)+'K'; if(n>=1000)return(n/1000).toFixed(1)+'K'; return String(n); }
 
-// â"€â"€ DRAW DIE â"€â"€
+
+
+// "" DRAW DIE ""
+
 function drawDie(id,value){
+
   const canvas=document.getElementById(id),ctx=canvas.getContext('2d'),sz=canvas.width;
+
   ctx.clearRect(0,0,sz,sz);
+
   const grad=ctx.createLinearGradient(0,0,sz,sz); grad.addColorStop(0,'#fffef5'); grad.addColorStop(1,'#f0e8d0');
+
   ctx.fillStyle=grad; const r=sz*0.14;
+
   ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(sz-r,0);ctx.quadraticCurveTo(sz,0,sz,r);ctx.lineTo(sz,sz-r);ctx.quadraticCurveTo(sz,sz,sz-r,sz);ctx.lineTo(r,sz);ctx.quadraticCurveTo(0,sz,0,sz-r);ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
+
   ctx.strokeStyle='#c8b07a';ctx.lineWidth=1.5;ctx.stroke();
+
   const dots={1:[[.5,.5]],2:[[.28,.28],[.72,.72]],3:[[.28,.28],[.5,.5],[.72,.72]],4:[[.28,.28],[.72,.28],[.28,.72],[.72,.72]],5:[[.28,.28],[.72,.28],[.5,.5],[.28,.72],[.72,.72]],6:[[.28,.22],[.72,.22],[.28,.5],[.72,.5],[.28,.78],[.72,.78]]};
+
   ctx.fillStyle='#991111';
+
   for(const[dx,dy] of(dots[value]||dots[1])){ ctx.beginPath();ctx.arc(dx*sz,dy*sz,sz*0.1,0,Math.PI*2);ctx.fill(); }
+
 }
 
-// â"€â"€ NUMBER ZONES (locked) â"€â"€
+
+
+// "" NUMBER ZONES (locked) ""
+
 const NUMS = [4,5,6,8,9,10];
+
 const zoneData = {
+
   4:  {x:720,  y:282, w:99,  h:74},
+
   5:  {x:817,  y:282, w:87,  h:80},
+
   6:  {x:914,  y:282, w:78,  h:89},
+
   8:  {x:994,  y:282, w:78,  h:80},
+
   9:  {x:1075, y:291, w:82,  h:86},
+
   10: {x:1156, y:291, w:78,  h:80},
+
 };
+
 function applyAllZones(){
+
   NUMS.forEach(n=>{
+
     const el=document.getElementById('z-place'+n); if(!el) return;
+
     const d=zoneData[n];
+
     el.style.left=d.x+'px'; el.style.top=d.y+'px';
+
     el.style.width=d.w+'px'; el.style.height=d.h+'px';
+
   });
+
 }
 
-// â"€â"€ BET ZONE DEBUG â"€â"€
+
+
+// "" BET ZONE DEBUG ""
+
 const BET_ZONE_IDS = ['dontpass','dontcome','come','any7','anycraps','yo','two','three','twelve','hard4','hard6','hard8','hard10','passodds','dontodds','field','passline','big6','big8','ce','world'];
+
 const betZoneData = {
+
   dontpass: {x:709,  y:519, w:545, h:47,  scale:100},
+
   dontcome: {x:710,  y:100, w:100, h:46,  scale:100},
+
   come:     {x:20,   y:420, w:340, h:72,  scale:100},
+
   any7:     {x:1272, y:351, w:221, h:21,  scale:100},
+
   anycraps: {x:1293, y:582, w:235, h:29,  scale:100},
+
   yo:       {x:1287, y:532, w:240, h:43,  scale:100},
+
   two:      {x:1376, y:485, w:60,  h:40,  scale:100},
+
   three:    {x:1291, y:484, w:70,  h:42,  scale:100},
+
   twelve:   {x:1451, y:482, w:60,  h:43,  scale:100},
+
   hard4:    {x:1403, y:429, w:97,  h:46,  scale:100},
+
   hard6:    {x:1278, y:379, w:109, h:45,  scale:100},
+
   hard8:    {x:1277, y:431, w:123, h:47,  scale:100},
+
   hard10:   {x:1400, y:383, w:94,  h:38,  scale:100},
+
   passodds: {x:828,  y:420, w:72,  h:37,  scale:100},
+
   dontodds: {x:828,  y:457, w:72,  h:37,  scale:100},
+
   field:    {x:705,  y:455, w:533, h:61,  scale:100},
+
   passline: {x:561,  y:567, w:710, h:49,  scale:100},
+
   big6:     {x:561,  y:458, w:58,  h:64,  scale:100, shape:'shape-circle'},
+
   big8:     {x:615,  y:491, w:90,  h:70,  scale:100, shape:'shape-circle'},
+
   ce:       {x:62,   y:632, w:100, h:60,  scale:100, shape:'shape-hex'},
+
   world:    {x:92,   y:575, w:110, h:60,  scale:100, shape:'shape-octagon'},
+
 };
+
 // horn removed - not on this table
+
 let activeBetZone = 'big6';
+
 let dbgOn = false;
+
+
 
 const SHAPES=['shape-rounded','shape-circle','shape-diamond','shape-hex','shape-octagon'];
 
+
+
 function applyAllBetZones(){
+
   BET_ZONE_IDS.forEach(id=>{
+
     const el=document.getElementById('z-'+id); if(!el) return;
+
     const d=betZoneData[id];
+
     el.style.left=d.x+'px'; el.style.top=d.y+'px';
+
     el.style.width=d.w+'px'; el.style.height=d.h+'px';
+
     const sc=(d.scale||100)/100;
+
     el.style.transform=sc!==1?`scale(${sc})`:'';
+
     el.style.transformOrigin='top left';
+
     if(d.shape!==undefined){ SHAPES.forEach(s=>el.classList.remove(s)); if(d.shape) el.classList.add(d.shape); }
+
   });
+
 }
+
+
 
 function refreshPanel(){
+
   const d=betZoneData[activeBetZone];
+
   const setV=(id,val)=>{ const e=document.getElementById(id); if(e) e.value=val; };
+
   const setT=(id,val)=>{ const e=document.getElementById(id); if(e) e.textContent=val; };
+
   setV('bz-x',d.x); setT('bv-x',d.x);
+
   setV('bz-y',d.y); setT('bv-y',d.y);
+
   setV('bz-w',d.w); setT('bv-w',d.w);
+
   setV('bz-h',d.h); setT('bv-h',d.h);
+
   setV('bz-s',d.scale||100); setT('bv-s',d.scale||100);
+
   const sh=document.getElementById('bz-shape'); if(sh) sh.value=(d.shape||'');
-  const lbl=document.getElementById('dbgSelectedLabel'); if(lbl) lbl.textContent='â†' '+activeBetZone;
+
+  const lbl=document.getElementById('dbgSelectedLabel'); if(lbl) lbl.textContent='' '+activeBetZone;
+
   // Highlight selected
+
   BET_ZONE_IDS.forEach(bid=>{
+
     const el=document.getElementById('z-'+bid);
+
     if(el) el.style.outline=bid===activeBetZone?'3px dashed #ffd700':'1px dashed rgba(255,215,0,0.25)';
+
   });
+
 }
+
+
 
 function selBetZone(id){
+
   activeBetZone=id;
+
   refreshPanel();
+
 }
+
+
 
 function selBetZoneNext(){
+
   const i=BET_ZONE_IDS.indexOf(activeBetZone);
+
   selBetZone(BET_ZONE_IDS[(i+1)%BET_ZONE_IDS.length]);
+
 }
+
 function selBetZonePrev(){
+
   const i=BET_ZONE_IDS.indexOf(activeBetZone);
+
   selBetZone(BET_ZONE_IDS[(i-1+BET_ZONE_IDS.length)%BET_ZONE_IDS.length]);
+
 }
+
+
 
 function applyBetZone(){
+
   const x=+document.getElementById('bz-x').value;
+
   const y=+document.getElementById('bz-y').value;
+
   const w=+document.getElementById('bz-w').value;
+
   const h=+document.getElementById('bz-h').value;
+
   const scale=+document.getElementById('bz-s').value;
+
   document.getElementById('bv-x').textContent=x;
+
   document.getElementById('bv-y').textContent=y;
+
   document.getElementById('bv-w').textContent=w;
+
   document.getElementById('bv-h').textContent=h;
+
   document.getElementById('bv-s').textContent=scale;
+
   const shape=document.getElementById('bz-shape')?.value||'';
+
   betZoneData[activeBetZone]={x,y,w,h,scale,shape};
+
   applyAllBetZones();
+
   refreshPanel();
+
 }
 
-// â"€â"€ Drag to move + corner resize â"€â"€
+
+
+// "" Drag to move + corner resize ""
+
 let _drag=null;
 
+
+
 function initDragOnZone(id){
+
   const el=document.getElementById('z-'+id); if(!el) return;
+
+
 
   // Main drag (move)
+
   el.addEventListener('mousedown', e=>{
+
     if(!dbgOn) return;
+
     if(e.target.classList.contains('dbg-resize-handle')) return;
+
     e.preventDefault(); e.stopPropagation();
+
     selBetZone(id);
+
     const d=betZoneData[id];
+
     _drag={type:'move',id,startX:e.clientX,startY:e.clientY,ox:d.x,oy:d.y};
+
   });
+
+
 
   // Click to select
+
   el.addEventListener('click', e=>{
+
     if(!dbgOn) return;
+
     e.stopPropagation();
+
     selBetZone(id);
+
   });
+
 }
+
+
 
 // Resize handle injected per zone
+
 function injectResizeHandles(id){
+
   const el=document.getElementById('z-'+id); if(!el) return;
+
   // Remove old
+
   el.querySelectorAll('.dbg-resize-handle').forEach(h=>h.remove());
+
   const corners=[
+
     {cx:0,cy:0,cur:'nw-resize'},{cx:1,cy:0,cur:'ne-resize'},
+
     {cx:0,cy:1,cur:'sw-resize'},{cx:1,cy:1,cur:'se-resize'}
+
   ];
+
   corners.forEach(({cx,cy,cur})=>{
+
     const h=document.createElement('div');
+
     h.className='dbg-resize-handle';
+
     h.style.cssText=`position:absolute;width:10px;height:10px;background:#ffd700;border:1px solid #000;border-radius:2px;z-index:9999;cursor:${cur};`
+
       + (cx===0?'left:-5px;':'right:-5px;')
+
       + (cy===0?'top:-5px;':'bottom:-5px;');
+
     h.addEventListener('mousedown', e=>{
+
       if(!dbgOn) return;
+
       e.preventDefault(); e.stopPropagation();
+
       selBetZone(id);
+
       const d=betZoneData[id];
+
       _drag={type:'resize',id,cx,cy,startX:e.clientX,startY:e.clientY,ox:d.x,oy:d.y,ow:d.w,oh:d.h};
+
     });
+
     el.appendChild(h);
+
   });
+
 }
 
+
+
 document.addEventListener('mousemove', e=>{
+
   if(!_drag) return;
+
   const dx=e.clientX-_drag.startX, dy=e.clientY-_drag.startY;
+
   const d=betZoneData[_drag.id];
+
   if(_drag.type==='move'){
+
     d.x=Math.round(_drag.ox+dx);
+
     d.y=Math.round(_drag.oy+dy);
+
   } else {
+
     // Resize: cx=0 means left edge, cy=0 means top edge
+
     if(_drag.cx===0){ d.x=Math.round(_drag.ox+dx); d.w=Math.max(20,Math.round(_drag.ow-dx)); }
+
     else             { d.w=Math.max(20,Math.round(_drag.ow+dx)); }
+
     if(_drag.cy===0){ d.y=Math.round(_drag.oy+dy); d.h=Math.max(20,Math.round(_drag.oh-dy)); }
+
     else             { d.h=Math.max(20,Math.round(_drag.oh+dy)); }
+
   }
+
   applyAllBetZones();
+
   refreshPanel();
+
 });
+
+
 
 document.addEventListener('mouseup', ()=>{ _drag=null; });
 
+
+
 function toggleDbg(){
+
   dbgOn=!dbgOn;
+
   document.getElementById('dbgPanel').classList.toggle('visible', dbgOn);
+
   BET_ZONE_IDS.forEach(id=>{
+
     const el=document.getElementById('z-'+id); if(!el) return;
+
     if(dbgOn){
+
       el.style.outline=id===activeBetZone?'3px dashed #ffd700':'1px dashed rgba(255,215,0,0.25)';
+
       el.style.cursor='move';
+
       injectResizeHandles(id);
+
     } else {
+
       el.style.outline='';
+
       el.style.cursor='';
+
       el.querySelectorAll('.dbg-resize-handle').forEach(h=>h.remove());
+
     }
+
   });
+
   if(dbgOn) refreshPanel();
+
 }
+
+
 
 function copyBetZones(){
+
   const lines=BET_ZONE_IDS.map(id=>{
+
     const d=betZoneData[id];
+
     const sc=d.shape?`, shape:'${d.shape}'`:'';
+
     const ss=(d.scale&&d.scale!==100)?`, scale:${d.scale}`:'';
+
     return `  ${id}: {x:${d.x}, y:${d.y}, w:${d.w}, h:${d.h}${ss}${sc}},`;
+
   });
+
   const out=lines.join('\n');
+
   document.getElementById('dbgOut').value=out;
+
   navigator.clipboard.writeText(out).catch(()=>{});
+
 }
 
+
+
 // Wire up drag on all zones after init
+
 function initAllDrag(){ BET_ZONE_IDS.forEach(initDragOnZone); }
 
-// â"€â"€ INIT â"€â"€
+
+
+// "" INIT ""
+
 drawDie('die1',dice[0]); drawDie('die2',dice[1]);
+
 applyAllZones();
+
 applyAllBetZones();
+
 updateZoneStates(); updatePuck(); updateUI();
+
 initAllDrag();
+
 </script>
+
 </body>
+
 </html>
+
+
+
 
 
