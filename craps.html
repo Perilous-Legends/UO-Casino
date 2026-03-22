@@ -371,6 +371,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 .dice-panel{
+  pointer-events:none !important;
   position:fixed;
   left:var(--dice-x,480px);
   top:var(--dice-y,20px);
@@ -760,14 +761,14 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 /* Dice position markers */
-#diceMarkerStop{position:fixed;width:24px;height:24px;background:#4aff7a;border-radius:50%;border:3px solid #fff;
-  cursor:move;z-index:200;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #4aff7a;}
+#diceMarkerStop{position:fixed;width:32px;height:32px;background:#4aff7a;border-radius:50%;border:3px solid #fff;
+  cursor:move;z-index:9999;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #4aff7a;}
 #diceMarkerStop::after{content:'STOP';position:absolute;top:26px;left:50%;transform:translateX(-50%);
   color:#4aff7a;font-size:10px;font-weight:bold;white-space:nowrap;text-shadow:0 0 4px #000;}
-#diceMarkerStart{position:fixed;width:24px;height:24px;background:#ff4444;border-radius:50%;border:3px solid #fff;
-  cursor:move;z-index:200;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #f44;}
-#diceMarkerBounce{position:fixed;width:24px;height:24px;background:#ffaa00;border-radius:50%;border:3px solid #fff;
-  cursor:move;z-index:200;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #fa0;}
+#diceMarkerStart{position:fixed;width:32px;height:32px;background:#ff4444;border-radius:50%;border:3px solid #fff;
+  cursor:move;z-index:9999;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #f44;}
+#diceMarkerBounce{position:fixed;width:32px;height:32px;background:#ffaa00;border-radius:50%;border:3px solid #fff;
+  cursor:move;z-index:9999;display:none;transform:translate(-50%,-50%);box-shadow:0 0 8px #fa0;}
 #diceMarkerBounce::after{content:'BOUNCE';position:absolute;top:26px;left:50%;transform:translateX(-50%);
   color:#ffaa00;font-size:10px;font-weight:bold;white-space:nowrap;text-shadow:0 0 4px #000;}
 #diceMarkerStart::after{content:'START';position:absolute;top:26px;left:50%;transform:translateX(-50%);
@@ -4358,7 +4359,7 @@ function initAllDrag(){ BET_ZONE_IDS.forEach(initDragOnZone); }
 // -- DICE POSITION DEBUG --
 let diceDbgOn = false;
 // STOP pos, START offset, BOUNCE absolute
-const dicePos = { x: 686, y: 379, sx: 810, sy: 33, bx: 1350, by: 379 };
+const dicePos = { x: 686, y: 520, sx: 810, sy: -107, bx: 1350, by: 379 };
 
 function buildDiceKeyframes() {
   // All positions in screen coords. STOP = (dicePos.x, dicePos.y) = origin in transform space.
