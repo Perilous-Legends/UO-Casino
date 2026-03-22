@@ -1588,6 +1588,9 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
   </div>
 
   <div style="display:flex;gap:6px;margin-top:4px;">
+    <button onclick="resetDiceMarkers()" style="flex:1;background:#4a3000;color:#ffaa00;border:1px solid #ffaa00;border-radius:4px;padding:6px;cursor:pointer;font-size:11px;">RESET CENTER</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-top:4px;">
     <button onclick="testDiceRoll()" style="flex:1;background:#1a4a1a;color:#4aff7a;border:1px solid #4aff7a;border-radius:4px;padding:6px;cursor:pointer;font-size:11px;">TEST ROLL</button>
     <button onclick="copyDicePos()" style="flex:1;background:#333;color:#4af;border:1px solid #4af;border-radius:4px;padding:6px;cursor:pointer;font-size:11px;">COPY</button>
   </div>
@@ -4463,13 +4466,28 @@ function applyDicePos() {
 }
 
 function nudge(marker, axis, delta) {
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
   if(marker === 'stop') {
-    if(axis === 'x') dicePos.x += delta; else dicePos.y += delta;
+    if(axis === 'x') dicePos.x = Math.max(0, Math.min(vw, dicePos.x + delta));
+    else              dicePos.y = Math.max(0, Math.min(vh, dicePos.y + delta));
   } else if(marker === 'start') {
-    if(axis === 'x') dicePos.sx += delta; else dicePos.sy += delta;
+    if(axis === 'x') dicePos.sx += delta;
+    else             dicePos.sy += delta;
   } else if(marker === 'bounce') {
-    if(axis === 'x') dicePos.bx += delta; else dicePos.by += delta;
+    if(axis === 'x') dicePos.bx = Math.max(0, Math.min(vw, dicePos.bx + delta));
+    else             dicePos.by = Math.max(0, Math.min(vh, dicePos.by + delta));
   }
+  applyDicePos();
+}
+
+function resetDiceMarkers() {
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+  const cx = Math.round(vw / 2), cy = Math.round(vh / 2);
+  dicePos.x = cx; dicePos.y = cy;
+  dicePos.sx = 0; dicePos.sy = 0;
+  dicePos.bx = cx; dicePos.by = cy;
   applyDicePos();
 }
 
@@ -4518,8 +4536,8 @@ function toggleDiceDbg() {
   const bounce = document.getElementById('diceMarkerBounce');
   if(diceDbgOn){
     // Always reset to true screen center when opening
-    const cx = Math.round(window.innerWidth / 2);
-    const cy = Math.round(window.innerHeight / 2);
+    const cx = Math.round(document.documentElement.clientWidth / 2);
+    const cy = Math.round(document.documentElement.clientHeight / 2);
     dicePos.x = cx; dicePos.y = cy;
     dicePos.sx = 0; dicePos.sy = 0;
     dicePos.bx = cx; dicePos.by = cy;
