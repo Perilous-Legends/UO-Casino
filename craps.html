@@ -2364,11 +2364,7 @@ function rollDice(){
   w1.classList.add('throwing1'); w2.classList.add('throwing2');
 
   // Play rolling sound on throw, stop when dice land
-  try {
-    const rs = document.getElementById('diceRollSound');
-    if(rs){ rs.currentTime = 0; rs.play().catch(()=>{}); }
-    setTimeout(()=>{ if(rs){ rs.pause(); rs.currentTime = 0; } }, 1130);
-  } catch(e){}
+  (function(){ const rs = document.getElementById('diceRollSound'); if(!rs) return; try{ rs.currentTime=0; rs.play().catch(()=>{}); setTimeout(()=>{ rs.pause(); rs.currentTime=0; }, 1130); }catch(e){} })();
 
   setTimeout(()=>{ playThud(); },1100);
 
