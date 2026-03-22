@@ -147,6 +147,17 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 /* Hint bar */
 .hint{font-size:9px;color:#aaa;text-align:center;padding:1px 4px;flex-shrink:0;background:rgba(0,0,0,0.5);}
 
+/* Number overlay zones */
+.num-zone{position:absolute;pointer-events:all;cursor:pointer;border:1px solid rgba(255,215,0,0.4);border-radius:4px;background:rgba(0,0,0,0.18);display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;transition:background 0.15s;}
+.num-zone:hover{background:rgba(255,215,0,0.18);border-color:#ffd700;}
+.num-zone.has-bet{background:rgba(255,215,0,0.12);}
+.num-zone.is-point{background:rgba(255,215,0,0.15);border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.4);}
+.num-zone .bet-chip{position:absolute;bottom:3px;right:4px;background:#c9a84c;color:#000;border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;font-size:11px;font-weight:bold;display:none;}
+.num-zone.has-bet .bet-chip{display:block;}
+.num-zone .puck{top:2px;left:50%;transform:translateX(-50%);}
+.num-zone .off-badge{top:2px;left:2px;display:none;}
+.num-zone .come-stack{top:2px;left:2px;right:28px;}
+
 /* Debug panel */
 #dbgPanel{position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,0.88);border:1px solid #ffd70066;border-radius:8px;padding:10px 14px;font-size:11px;font-family:monospace;color:#ffd700;min-width:260px;display:none;}
 #dbgPanel.visible{display:block;}
@@ -193,84 +204,8 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
     </div>
   </div>
 
-  <!-- Row 2: Numbers + Dice -->
-  <div class="row row-numbers">
-    <div style="flex:1;display:flex;gap:3px;">
-      <!-- Each number box: puck + come stack (come bet, come odds, DC bet, DC odds) + number + place odds -->
-      <div class="zone num-box" id="z-place4" onclick="placeBet('place4')">
-        <div class="puck off" id="puck4">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come4"    onclick="event.stopPropagation();addComeOdds(4)"   title="Click to add Come odds on 4"></span>
-          <span class="come-indicator come-odds"  id="ci-codds4"   onclick="event.stopPropagation();addComeOdds(4)"   title="Click to add more Come odds"></span>
-          <span class="come-indicator dc-bet"     id="ci-dc4"      onclick="event.stopPropagation();addDCOdds(4)"     title="Click to add Lay odds on 4"></span>
-          <span class="come-indicator dc-odds"    id="ci-dcodds4"  onclick="event.stopPropagation();addDCOdds(4)"     title="Click to add more Lay odds"></span>
-        </div>
-        <span class="off-badge" id="off4">OFF</span>
-        <span class="num">4</span><span class="place-odds">9:5</span>
-        <span class="bet-chip" id="chip-place4">0</span>
-      </div>
-      <div class="zone num-box" id="z-place5" onclick="placeBet('place5')">
-        <div class="puck off" id="puck5">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come5"   onclick="event.stopPropagation();addComeOdds(5)"  title="Click to add Come odds on 5"></span>
-          <span class="come-indicator come-odds" id="ci-codds5"  onclick="event.stopPropagation();addComeOdds(5)"  title="Add more Come odds"></span>
-          <span class="come-indicator dc-bet"    id="ci-dc5"     onclick="event.stopPropagation();addDCOdds(5)"   title="Click to add Lay odds on 5"></span>
-          <span class="come-indicator dc-odds"   id="ci-dcodds5" onclick="event.stopPropagation();addDCOdds(5)"   title="Add more Lay odds"></span>
-        </div>
-        <span class="off-badge" id="off5">OFF</span>
-        <span class="num">5</span><span class="place-odds">7:5</span>
-        <span class="bet-chip" id="chip-place5">0</span>
-      </div>
-      <div class="zone num-box" id="z-place6" onclick="placeBet('place6')">
-        <div class="puck off" id="puck6">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come6"   onclick="event.stopPropagation();addComeOdds(6)"  title="Click to add Come odds on 6"></span>
-          <span class="come-indicator come-odds" id="ci-codds6"  onclick="event.stopPropagation();addComeOdds(6)"></span>
-          <span class="come-indicator dc-bet"    id="ci-dc6"     onclick="event.stopPropagation();addDCOdds(6)"></span>
-          <span class="come-indicator dc-odds"   id="ci-dcodds6" onclick="event.stopPropagation();addDCOdds(6)"></span>
-        </div>
-        <span class="off-badge" id="off6">OFF</span>
-        <span class="num">SIX</span><span class="place-odds">7:6</span>
-        <span class="bet-chip" id="chip-place6">0</span>
-      </div>
-      <div class="zone num-box" id="z-place8" onclick="placeBet('place8')">
-        <div class="puck off" id="puck8">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come8"   onclick="event.stopPropagation();addComeOdds(8)"></span>
-          <span class="come-indicator come-odds" id="ci-codds8"  onclick="event.stopPropagation();addComeOdds(8)"></span>
-          <span class="come-indicator dc-bet"    id="ci-dc8"     onclick="event.stopPropagation();addDCOdds(8)"></span>
-          <span class="come-indicator dc-odds"   id="ci-dcodds8" onclick="event.stopPropagation();addDCOdds(8)"></span>
-        </div>
-        <span class="off-badge" id="off8">OFF</span>
-        <span class="num">8</span><span class="place-odds">7:6</span>
-        <span class="bet-chip" id="chip-place8">0</span>
-      </div>
-      <div class="zone num-box" id="z-place9" onclick="placeBet('place9')">
-        <div class="puck off" id="puck9">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come9"   onclick="event.stopPropagation();addComeOdds(9)"></span>
-          <span class="come-indicator come-odds" id="ci-codds9"  onclick="event.stopPropagation();addComeOdds(9)"></span>
-          <span class="come-indicator dc-bet"    id="ci-dc9"     onclick="event.stopPropagation();addDCOdds(9)"></span>
-          <span class="come-indicator dc-odds"   id="ci-dcodds9" onclick="event.stopPropagation();addDCOdds(9)"></span>
-        </div>
-        <span class="off-badge" id="off9">OFF</span>
-        <span class="num">NINE</span><span class="place-odds">7:5</span>
-        <span class="bet-chip" id="chip-place9">0</span>
-      </div>
-      <div class="zone num-box" id="z-place10" onclick="placeBet('place10')">
-        <div class="puck off" id="puck10">ON</div>
-        <div class="come-stack">
-          <span class="come-indicator come-bet"  id="ci-come10"   onclick="event.stopPropagation();addComeOdds(10)"></span>
-          <span class="come-indicator come-odds" id="ci-codds10"  onclick="event.stopPropagation();addComeOdds(10)"></span>
-          <span class="come-indicator dc-bet"    id="ci-dc10"     onclick="event.stopPropagation();addDCOdds(10)"></span>
-          <span class="come-indicator dc-odds"   id="ci-dcodds10" onclick="event.stopPropagation();addDCOdds(10)"></span>
-        </div>
-        <span class="off-badge" id="off10">OFF</span>
-        <span class="num">10</span><span class="place-odds">9:5</span>
-        <span class="bet-chip" id="chip-place10">0</span>
-      </div>
-    </div>
-
+  <!-- Row 2: Dice only (number zones are now fixed overlays on the background) -->
+  <div class="row row-numbers" style="justify-content:center;">
     <!-- Dice panel -->
     <div class="dice-panel">
       <div class="dice-row" id="diceRow">
@@ -361,28 +296,90 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
   <button class="btn-roll"     id="btnRoll"    onclick="rollDice()">ROLL</button>
 </div>
 
+<!-- Fixed number zone overlays on the background image -->
+<div id="numOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;">
+
+  <div class="num-zone" id="z-place4" onclick="placeBet('place4')" title="Place 4 (9:5)">
+    <div class="puck off" id="puck4">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come4"   onclick="event.stopPropagation();addComeOdds(4)"></span>
+      <span class="come-indicator come-odds" id="ci-codds4"  onclick="event.stopPropagation();addComeOdds(4)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc4"     onclick="event.stopPropagation();addDCOdds(4)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds4" onclick="event.stopPropagation();addDCOdds(4)"></span>
+    </div>
+    <span class="off-badge" id="off4">OFF</span>
+    <span class="bet-chip" id="chip-place4">0</span>
+  </div>
+
+  <div class="num-zone" id="z-place5" onclick="placeBet('place5')" title="Place 5 (7:5)">
+    <div class="puck off" id="puck5">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come5"   onclick="event.stopPropagation();addComeOdds(5)"></span>
+      <span class="come-indicator come-odds" id="ci-codds5"  onclick="event.stopPropagation();addComeOdds(5)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc5"     onclick="event.stopPropagation();addDCOdds(5)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds5" onclick="event.stopPropagation();addDCOdds(5)"></span>
+    </div>
+    <span class="off-badge" id="off5">OFF</span>
+    <span class="bet-chip" id="chip-place5">0</span>
+  </div>
+
+  <div class="num-zone" id="z-place6" onclick="placeBet('place6')" title="Place 6 (7:6)">
+    <div class="puck off" id="puck6">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come6"   onclick="event.stopPropagation();addComeOdds(6)"></span>
+      <span class="come-indicator come-odds" id="ci-codds6"  onclick="event.stopPropagation();addComeOdds(6)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc6"     onclick="event.stopPropagation();addDCOdds(6)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds6" onclick="event.stopPropagation();addDCOdds(6)"></span>
+    </div>
+    <span class="off-badge" id="off6">OFF</span>
+    <span class="bet-chip" id="chip-place6">0</span>
+  </div>
+
+  <div class="num-zone" id="z-place8" onclick="placeBet('place8')" title="Place 8 (7:6)">
+    <div class="puck off" id="puck8">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come8"   onclick="event.stopPropagation();addComeOdds(8)"></span>
+      <span class="come-indicator come-odds" id="ci-codds8"  onclick="event.stopPropagation();addComeOdds(8)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc8"     onclick="event.stopPropagation();addDCOdds(8)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds8" onclick="event.stopPropagation();addDCOdds(8)"></span>
+    </div>
+    <span class="off-badge" id="off8">OFF</span>
+    <span class="bet-chip" id="chip-place8">0</span>
+  </div>
+
+  <div class="num-zone" id="z-place9" onclick="placeBet('place9')" title="Place 9 (7:5)">
+    <div class="puck off" id="puck9">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come9"   onclick="event.stopPropagation();addComeOdds(9)"></span>
+      <span class="come-indicator come-odds" id="ci-codds9"  onclick="event.stopPropagation();addComeOdds(9)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc9"     onclick="event.stopPropagation();addDCOdds(9)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds9" onclick="event.stopPropagation();addDCOdds(9)"></span>
+    </div>
+    <span class="off-badge" id="off9">OFF</span>
+    <span class="bet-chip" id="chip-place9">0</span>
+  </div>
+
+  <div class="num-zone" id="z-place10" onclick="placeBet('place10')" title="Place 10 (9:5)">
+    <div class="puck off" id="puck10">ON</div>
+    <div class="come-stack">
+      <span class="come-indicator come-bet"  id="ci-come10"   onclick="event.stopPropagation();addComeOdds(10)"></span>
+      <span class="come-indicator come-odds" id="ci-codds10"  onclick="event.stopPropagation();addComeOdds(10)"></span>
+      <span class="come-indicator dc-bet"    id="ci-dc10"     onclick="event.stopPropagation();addDCOdds(10)"></span>
+      <span class="come-indicator dc-odds"   id="ci-dcodds10" onclick="event.stopPropagation();addDCOdds(10)"></span>
+    </div>
+    <span class="off-badge" id="off10">OFF</span>
+    <span class="bet-chip" id="chip-place10">0</span>
+  </div>
+
+</div>
+
 <!-- Debug toggle button -->
 <button class="dbg-toggle" onclick="toggleDbg()">🔧 DEBUG</button>
 
 <!-- Debug panel -->
 <div id="dbgPanel">
-  <h3>🎲 Number Box Debug</h3>
-
-  <label>Row Height <input type="range" id="d-rowh" min="30" max="200" value="59" oninput="applyDbg()"> <span class="val" id="v-rowh">59</span>px</label>
-  <label>Num Font  <input type="range" id="d-font" min="8"  max="60"  value="13" oninput="applyDbg()"> <span class="val" id="v-font">13</span>px</label>
-  <label>Odds Font <input type="range" id="d-odds" min="4"  max="20"  value="6"  oninput="applyDbg()"> <span class="val" id="v-odds">6</span>px</label>
-
-  <div class="section">Individual box widths (flex-basis px, 0=auto)</div>
-  <label>4 <input type="range" id="d-w4"  min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w4">auto</span></label>
-  <label>5 <input type="range" id="d-w5"  min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w5">auto</span></label>
-  <label>6 <input type="range" id="d-w6"  min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w6">auto</span></label>
-  <label>8 <input type="range" id="d-w8"  min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w8">auto</span></label>
-  <label>9 <input type="range" id="d-w9"  min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w9">auto</span></label>
-  <label>10<input type="range" id="d-w10" min="0" max="300" value="0" oninput="applyDbg()"> <span class="val" id="v-w10">auto</span></label>
-
-  <button onclick="copyDbg()">📋 COPY VALUES</button>
-  <textarea id="dbgOut" readonly placeholder="Values appear here after COPY…"></textarea>
-</div>
+  <h3>🎲 Number Zone Placement</h3>
+  <div style="font-size:9px;color:#aaa;margin-bottom:6px;">Drag sliders to position each zone on the image. Hit COPY when done.</div>
 
 <script>
 // ── STATE ──
@@ -805,7 +802,10 @@ function updatePuck(){
     const p=document.getElementById('puck'+n); if(!p) return;
     if(point===n){ p.classList.add('on');p.classList.remove('off');p.textContent='ON'; }
     else{ p.classList.add('off');p.classList.remove('on');p.textContent=''; }
-    document.getElementById('z-place'+n)?.classList.toggle('is-point',point===n);
+    const z=document.getElementById('z-place'+n);
+    z?.classList.toggle('is-point',point===n);
+    // has-bet for num-zone
+    z?.classList.toggle('has-bet',(bets['place'+n]||0)>0);
   });
   document.getElementById('pointDisp').textContent=point?`POINT: ${point}`:'COME-OUT ROLL';
 }
@@ -828,51 +828,80 @@ function drawDie(id,value){
   for(const[dx,dy] of(dots[value]||dots[1])){ ctx.beginPath();ctx.arc(dx*sz,dy*sz,sz*0.1,0,Math.PI*2);ctx.fill(); }
 }
 
-// ── DEBUG ──
-function toggleDbg(){ document.getElementById('dbgPanel').classList.toggle('visible'); }
-function applyDbg(){
-  const rowh = +document.getElementById('d-rowh').value;
-  const font = +document.getElementById('d-font').value;
-  const odds = +document.getElementById('d-odds').value;
-  document.getElementById('v-rowh').textContent=rowh;
-  document.getElementById('v-font').textContent=font;
-  document.getElementById('v-odds').textContent=odds;
-  const root=document.documentElement.style;
-  root.setProperty('--num-row-h', rowh+'px');
-  root.setProperty('--num-font',  font+'px');
-  root.setProperty('--num-odds-font', odds+'px');
-  [4,5,6,8,9,10].forEach(n=>{
-    const v=+document.getElementById('d-w'+n).value;
-    const lbl=document.getElementById('v-w'+n);
-    lbl.textContent = v===0?'auto':v+'px';
+// ── NUMBER ZONE DEBUG ──
+const NUMS = [4,5,6,8,9,10];
+// Starting positions: spread across top of screen, adjust via debug
+const zoneData = {
+  4:  {x:20,  y:20, w:120, h:80},
+  5:  {x:160, y:20, w:120, h:80},
+  6:  {x:300, y:20, w:120, h:80},
+  8:  {x:440, y:20, w:120, h:80},
+  9:  {x:580, y:20, w:120, h:80},
+  10: {x:720, y:20, w:120, h:80},
+};
+let activeZone = 4;
+
+function applyAllZones(){
+  NUMS.forEach(n=>{
     const el=document.getElementById('z-place'+n);
-    if(el){ el.style.flex = v===0?'1':'0 0 '+v+'px'; el.style.width = v===0?'':v+'px'; }
+    if(!el) return;
+    const d=zoneData[n];
+    el.style.left=d.x+'px'; el.style.top=d.y+'px';
+    el.style.width=d.w+'px'; el.style.height=d.h+'px';
   });
 }
+
+function selZone(n){
+  activeZone=n;
+  document.getElementById('editingLabel').textContent=n;
+  NUMS.forEach(m=>{
+    const b=document.getElementById('zb'+m);
+    if(b) b.style.background=m===n?'#665500':'#333';
+  });
+  const d=zoneData[n];
+  document.getElementById('d-x').value=d.x; document.getElementById('v-x').textContent=d.x;
+  document.getElementById('d-y').value=d.y; document.getElementById('v-y').textContent=d.y;
+  document.getElementById('d-w').value=d.w; document.getElementById('v-w').textContent=d.w;
+  document.getElementById('d-h').value=d.h; document.getElementById('v-h').textContent=d.h;
+}
+
+function applyZone(){
+  const x=+document.getElementById('d-x').value;
+  const y=+document.getElementById('d-y').value;
+  const w=+document.getElementById('d-w').value;
+  const h=+document.getElementById('d-h').value;
+  document.getElementById('v-x').textContent=x;
+  document.getElementById('v-y').textContent=y;
+  document.getElementById('v-w').textContent=w;
+  document.getElementById('v-h').textContent=h;
+  zoneData[activeZone]={x,y,w,h};
+  applyAllZones();
+}
+
+function toggleDbg(){
+  document.getElementById('dbgPanel').classList.toggle('visible');
+  // highlight active zones in debug mode
+  const on=document.getElementById('dbgPanel').classList.contains('visible');
+  NUMS.forEach(n=>{
+    const el=document.getElementById('z-place'+n);
+    if(el) el.style.outline=on?'2px dashed #ffd700':'';
+  });
+  if(on) selZone(activeZone);
+}
+
 function copyDbg(){
-  const rowh=document.getElementById('d-rowh').value;
-  const font=document.getElementById('d-font').value;
-  const odds=document.getElementById('d-odds').value;
-  const ws={};
-  [4,5,6,8,9,10].forEach(n=>{ ws[n]=+document.getElementById('d-w'+n).value; });
-  const out = [
-    `/* ── Number Box Debug Values ── */`,
-    `.row-numbers { height: ${rowh}px; }`,
-    `.num-box .num { font-size: ${font}px; }`,
-    `.num-box .place-odds { font-size: ${odds}px; }`,
-    `/* Individual widths (0=flex:1) */`,
-    ...[4,5,6,8,9,10].map(n=>ws[n]?`#z-place${n} { flex: 0 0 ${ws[n]}px; width: ${ws[n]}px; }`:``).filter(Boolean),
-    `/* CSS vars: */`,
-    `--num-row-h: ${rowh}px;`,
-    `--num-font: ${font}px;`,
-    `--num-odds-font: ${odds}px;`,
-  ].join('\n');
+  const lines=NUMS.map(n=>{
+    const d=zoneData[n];
+    return `#z-place${n}{left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;}`;
+  });
+  const out=lines.join('\n');
   document.getElementById('dbgOut').value=out;
   navigator.clipboard.writeText(out).catch(()=>{});
 }
 
 // ── INIT ──
 drawDie('die1',dice[0]); drawDie('die2',dice[1]);
+applyAllZones();
 updateZoneStates(); updatePuck(); updateUI();
 </script>
 </body>
