@@ -2366,7 +2366,7 @@ function rollDice(){
   // Play rolling sound on throw, stop when dice land
   (function(){ const rs = document.getElementById('diceRollSound'); if(!rs) return; try{ rs.currentTime=0; rs.play().catch(()=>{}); setTimeout(()=>{ rs.pause(); rs.currentTime=0; }, 1130); }catch(e){} })();
 
-  setTimeout(()=>{ playThud(); },1100);
+
 
 
 
