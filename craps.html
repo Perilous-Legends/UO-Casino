@@ -128,11 +128,11 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-#z-dontpass,#z-dontcome{background:rgba(100,20,20,0.25);border-color:rgba(255,100,100,0.3);color:#ff9999;}
+#z-dontpass,#z-dontcome,#z-dontpass2{background:transparent;border-color:transparent;color:transparent;}
 
 
 
-#z-dontpass:hover:not(.disabled),#z-dontcome:hover:not(.disabled){background:rgba(200,60,60,0.15);}
+#z-dontpass:hover:not(.disabled),#z-dontcome:hover:not(.disabled),#z-dontpass2:hover:not(.disabled){background:rgba(200,60,60,0.15);}
 
 
 
@@ -244,7 +244,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.prop-box{flex:1;border:1px solid transparent;border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 6px;cursor:pointer;position:relative;transition:background 0.15s;font-size:11px;}
+.prop-box{flex:1;border:1px solid transparent;background:transparent;color:transparent;border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 6px;cursor:pointer;position:relative;transition:background 0.15s;font-size:11px;}
 
 
 
@@ -272,7 +272,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.hard-box{flex:1;border:1px solid transparent;border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 5px;cursor:pointer;font-size:10px;position:relative;transition:background 0.15s;}
+.hard-box{flex:1;border:1px solid transparent;background:transparent;color:transparent;border-radius:3px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 5px;cursor:pointer;font-size:10px;position:relative;transition:background 0.15s;}
 
 
 
@@ -304,7 +304,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.odds-btn{flex:1;background:transparent;border:1px solid transparent;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#88ccff;position:relative;transition:background 0.15s,box-shadow 0.15s;}
+.odds-btn{flex:1;background:transparent;border:1px solid transparent;color:transparent;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#88ccff;position:relative;transition:background 0.15s,box-shadow 0.15s;}
 
 
 
@@ -348,7 +348,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-#z-passline{flex:1;font-size:18px;letter-spacing:3px;border-color:rgba(255,215,0,0.6);}
+#z-passline{flex:1;font-size:18px;letter-spacing:3px;border-color:transparent;}
 
 
 
@@ -1504,11 +1504,8 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 
-  <div class="prop-box bet-zone-overlay shape-circle"  id="z-big6"  onclick="placeBet('big6')" style="border-color:rgba(100,255,100,0.35);color:#88ffaa;"><span class="pname">BIG 6</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big6">0</span></div>
-
-
-
-  <div class="prop-box bet-zone-overlay shape-circle"  id="z-big8"  onclick="placeBet('big8')" style="border-color:rgba(100,255,100,0.35);color:#88ffaa;"><span class="pname">BIG 8</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big8">0</span></div>
+  <div class="prop-box bet-zone-overlay shape-circle"  id="z-big6"  onclick="placeBet('big6')" style="border-color:transparent;color:transparent;"><span class="pname">BIG 6</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big6">0</span></div>
+  <div class="prop-box bet-zone-overlay shape-circle"  id="z-big8"  onclick="placeBet('big8')" style="border-color:transparent;color:transparent;"><span class="pname">BIG 8</span><span class="podds">1:1</span><span class="bet-chip" id="chip-big8">0</span></div>
 
 
 
