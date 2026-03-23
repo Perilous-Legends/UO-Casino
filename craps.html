@@ -76,7 +76,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.bet-chip{position:absolute;bottom:3px;right:4px;background:transparent;color:#fff;border-radius:50%;width:36px;height:36px;line-height:36px;text-align:center;font-size:9px;font-weight:bold;display:none;background-size:cover;background-position:center;text-shadow:0 0 3px #000,0 0 3px #000;}
+.bet-chip{position:absolute;bottom:3px;right:4px;background:#c9a84c;color:#000;border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;font-size:11px;font-weight:bold;display:none;}
 
 
 
@@ -261,7 +261,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.prop-box .bet-chip{position:absolute;bottom:2px;right:3px;width:36px;height:36px;line-height:36px;font-size:9px;font-weight:bold;display:none;background-size:cover;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;border-radius:50%;}
+.prop-box .bet-chip{position:absolute;bottom:2px;right:3px;width:22px;height:22px;line-height:22px;font-size:9px;font-weight:bold;display:none;background:#c9a84c;color:#000;border-radius:50%;text-align:center;}
 
 
 
@@ -285,7 +285,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.hard-box .bet-chip{position:absolute;bottom:1px;right:2px;width:36px;height:36px;line-height:36px;font-size:9px;font-weight:bold;display:none;background-size:cover;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;border-radius:50%;}
+.hard-box .bet-chip{position:absolute;bottom:1px;right:2px;width:20px;height:20px;line-height:20px;font-size:9px;font-weight:bold;display:none;background:#c9a84c;color:#000;border-radius:50%;text-align:center;}
 
 
 
@@ -325,7 +325,7 @@ body{background:url('./craps-bg.png') center center / auto 100% no-repeat fixed;
 
 
 
-.odds-btn .bet-chip{position:absolute;bottom:2px;right:2px;width:36px;height:36px;line-height:36px;font-size:9px;font-weight:bold;display:none;background-size:cover;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;border-radius:50%;}
+.odds-btn .bet-chip{position:absolute;bottom:2px;right:2px;background:#4af;color:#000;width:24px;height:24px;line-height:24px;font-size:9px;font-weight:bold;display:none;border-radius:50%;text-align:center;}
 
 
 
@@ -621,7 +621,7 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 #z-place8  .bet-chip { bottom: 9px;  }
 #z-place9  .bet-chip { bottom: 24px; }
 #z-place10 .bet-chip { bottom: 18px; }
-.num-zone .bet-chip{position:absolute;bottom:3px;right:4px;width:36px;height:36px;line-height:36px;font-size:9px;font-weight:bold;display:none;background-size:cover;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;border-radius:50%;}
+.num-zone .bet-chip{position:absolute;bottom:3px;right:4px;background:#c9a84c;color:#000;border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;font-size:11px;font-weight:bold;display:none;}
 
 
 
@@ -3119,9 +3119,7 @@ function updateUI(){
 
 
 
-  const CHIP_IMGS={100:'https://drive.google.com/thumbnail?id=1hx7VaQG7UFHtdOE_uGJ64cOuedd81n-x&sz=w200',500:'https://drive.google.com/thumbnail?id=1IJ7Lp03TQ7rJjetXNoUGq9TB5b8sJmTs&sz=w200',1000:'https://drive.google.com/thumbnail?id=1gN38szt9JExdAZrVipnRKahg9zLwGtOq&sz=w200',5000:'https://drive.google.com/thumbnail?id=11cxGHjfNZFIJgTXnQGmFDSFK-1fUhVup&sz=w200',10000:'https://drive.google.com/thumbnail?id=10SkRQCPz-BckF4jBUS0noiSmThGsyx47&sz=w200'};
-  function chipImg(a){ if(a>=10000) return CHIP_IMGS[10000]; if(a>=5000) return CHIP_IMGS[5000]; if(a>=1000) return CHIP_IMGS[1000]; if(a>=500) return CHIP_IMGS[500]; return CHIP_IMGS[100]; }
-  for(const[k,id] of Object.entries(chipMap)){ const el=document.getElementById(id);if(!el)continue; const mirror={dontpass2:'dontpass',dontcome2:'dontcome'}; const a=(bets[mirror[k]??k])||0; el.textContent=a>0?fmtChip(a):''; el.style.backgroundImage=a>0?`url('${chipImg(a)}')`:'none'; el.parentElement.classList.toggle('has-bet',a>0); }
+  for(const[k,id] of Object.entries(chipMap)){ const el=document.getElementById(id);if(!el)continue; const mirror={dontpass2:'dontpass',dontcome2:'dontcome'}; const a=(bets[mirror[k]??k])||0; el.textContent=fmtChip(a); el.parentElement.classList.toggle('has-bet',a>0); }
 
 
 
