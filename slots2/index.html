@@ -247,12 +247,57 @@
   </style>
 </head>
 <body>
-  <div id="logoBar" style="width:100%;text-align:center;background:#05020f;flex-shrink:0;line-height:0;">
-    <img id="hohLogo" src="assets/images/slot-machine/hoh-logo.png" alt="Heroes of Holdem"
-      style="height:160px;width:auto;pointer-events:none;
-             filter:drop-shadow(0 2px 12px rgba(0,0,0,0.7));" />
-  </div>
+  <img id="hohLogo" src="assets/images/slot-machine/hoh-logo.png" alt="Heroes of Holdem"
+    style="position:fixed;top:-66px;left:50%;transform:translateX(-50%);
+           height:314px;width:auto;z-index:500;pointer-events:none;
+           filter:drop-shadow(0 2px 12px rgba(0,0,0,0.7));" />
   <div id="slot-machine"></div>
+
+  <!-- LOGO DEBUG PANEL (press L to toggle) -->
+  <div id="logoDebug" style="display:none;position:fixed;top:10px;right:10px;z-index:9999;
+    background:rgba(0,0,0,0.85);color:#fff;padding:14px 18px;border-radius:10px;
+    font-family:monospace;font-size:13px;min-width:260px;border:1px solid #555;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:10px;color:#ffd700;">🎰 Logo Debugger</div>
+    <div style="margin-bottom:6px;">
+      <label>Height: <span id="dbgHVal">360</span>px</label><br>
+      <input type="range" id="dbgHeight" min="50" max="800" value="360" style="width:100%" oninput="applyLogoDebug()">
+    </div>
+    <div style="margin-bottom:6px;">
+      <label>Top offset: <span id="dbgTVal">0</span>px</label><br>
+      <input type="range" id="dbgTop" min="-400" max="400" value="0" style="width:100%" oninput="applyLogoDebug()">
+    </div>
+    <div style="margin-bottom:6px;">
+      <label>Left offset: <span id="dbgLVal">0</span>px</label><br>
+      <input type="range" id="dbgLeft" min="-600" max="600" value="0" style="width:100%" oninput="applyLogoDebug()">
+    </div>
+    <div style="margin-top:10px;padding:8px;background:#111;border-radius:6px;font-size:11px;color:#adf;word-break:break-all;" id="dbgOutput">
+      CSS will show here
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#888;">Press <b>L</b> to hide</div>
+  </div>
+  <script>
+  function applyLogoDebug() {
+    const h   = document.getElementById('dbgHeight').value;
+    const top = document.getElementById('dbgTop').value;
+    const lft = document.getElementById('dbgLeft').value;
+    document.getElementById('dbgHVal').textContent = h;
+    document.getElementById('dbgTVal').textContent = top;
+    document.getElementById('dbgLVal').textContent = lft;
+    const logo = document.getElementById('hohLogo');
+    logo.style.height = h + 'px';
+    logo.style.top = top + 'px';
+    logo.style.left = '50%';
+    logo.style.transform = 'translateX(calc(-50% + ' + lft + 'px))';
+    document.getElementById('dbgOutput').textContent =
+      'height:' + h + 'px; top:' + top + 'px; left-offset:' + lft + 'px';
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'l' || e.key === 'L') {
+      const panel = document.getElementById('logoDebug');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+  </script>
 
   <!-- SCATTER SOUND: hybrid approach.
        Phase 1 (burst intercept): when the engine fires the 5 stopSpin setTimeouts, read each
@@ -421,7 +466,7 @@
               if (total >= 3) {
                 // Go straight to the prize wheel
                 origSetTO(() => {
-                  showOpenChestsBanner(total, () => startBonusRound());
+                  _lastWinScatters = total; showOpenChestsBanner(total, () => startBonusRound(total));
                 }, 800);
               }
             }
@@ -451,7 +496,9 @@
   <!-- BONUS ROUND OVERLAY - PRIZE WHEEL -->
   <div id="bonusOverlay">
     <div id="bonusTitle">✦ BONUS WHEEL ✦</div>
-    <div id="bonusSubtitle">SPIN THE WHEEL — CLAIM YOUR PRIZE</div>
+    <div id="bonusSubtitle">SPIN THE WHEEL � CLAIM YOUR PRIZE</div>
+    <div id="bonusSpinsInfo" style="font-family:Georgia,serif;font-size:1.05rem;color:#ffd700;letter-spacing:2px;margin:6px 0 0;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.7);">?? 3 Wheels = 1 Spin &nbsp;|&nbsp; 4 Wheels = 3 Spins &nbsp;|&nbsp; 5 Wheels = 5 Spins</div>
+    <div id="bonusSpinsLeft" style="font-family:Georgia,serif;font-size:1.3rem;color:#cc99ff;letter-spacing:2px;margin:4px 0 0;text-align:center;min-height:1.6rem;"></div>
     <div id="wheelWrap">
       <canvas id="wheelCanvas" width="500" height="500"></canvas>
       <div id="wheelPointer">▼</div>
@@ -503,6 +550,32 @@
   (function() {
     // Slow reels by 20% (engine default speed_max is 5000)
     slotMachineConfig.speed_max = 4000;
+
+    // Inject scatter/wheel spin rules into paytable after engine renders it
+    setTimeout(function injectScatterNote() {
+      const ptInner = document.querySelector('.smg-paytable-inner');
+      if (!ptInner) { setTimeout(injectScatterNote, 500); return; }
+      // Find the scatter symbol entry
+      const symbols = ptInner.querySelectorAll('.smg-paytable-symbol');
+      symbols.forEach(function(sym) {
+        const img = sym.querySelector('img');
+        if (img && img.src && img.src.includes('scatter')) {
+          // Only add once
+          if (sym.querySelector('.scatter-spin-rules')) return;
+          const note = document.createElement('div');
+          note.className = 'scatter-spin-rules';
+          note.style.cssText = 'margin-top:8px;padding:6px 10px;background:rgba(255,215,0,0.12);' +
+            'border:1px solid rgba(255,215,0,0.4);border-radius:6px;font-size:0.78rem;' +
+            'color:#ffd700;line-height:1.6;text-align:center;';
+          note.innerHTML = '<b>?? BONUS WHEEL</b><br>' +
+            '3 Wheels = 1 Spin<br>' +
+            '4 Wheels = 3 Spins<br>' +
+            '5 Wheels = 5 Spins';
+          sym.appendChild(note);
+        }
+      });
+    }, 1500);
+
 
     const BONUS_CHANCE    = 0.05;   // 5% per chest (prod)
     const BONUS_SPINS     = 10;     // free spins in bonus round
@@ -765,7 +838,7 @@
     function closeChestAndStartBonus() {
       stopBonusSound();
       document.getElementById('chestOverlay').classList.remove('active');
-      startBonusRound();
+      startBonusRound(_lastWinScatters);
     }
 
     function closeChestOverlay() {
@@ -777,25 +850,27 @@
 
     // ---- Bonus Wheel Logic ----
     const WHEEL_PRIZES = [
-      { label: '5,000g',        color: '#c0392b', amount: 5000   },
-      { label: '10,000g',       color: '#8e44ad', amount: 10000  },
-      { label: '25,000g',       color: '#2980b9', amount: 25000  },
-      { label: '50,000g',       color: '#27ae60', amount: 50000  },
-      { label: '100,000g',      color: '#d35400', amount: 100000 },
-      { label: '2x BET',        color: '#16a085', amount: -1, type: 'bet2x'  },
-      { label: '5x BET',        color: '#1a5276', amount: -1, type: 'bet5x'  },
-      { label: '10x BET',       color: '#7d6608', amount: -1, type: 'bet10x' },
-      { label: 'JACKPOT 500k',  color: '#922b21', amount: 500000 },
-      { label: 'FREE SPIN',     color: '#117a65', amount: 0, type: 'freespin' },
+      { label: '5,000g',       amount: 5000              },
+      { label: '10,000g',      amount: 10000             },
+      { label: '25,000g',      amount: 25000             },
+      { label: '5,000g',       amount: 5000              },
+      { label: '50,000g',      amount: 50000             },
+      { label: '10,000g',      amount: 10000             },
+      { label: '2x BET',       amount: -1, type: 'bet2x' },
+      { label: '5,000g',       amount: 5000              },
+      { label: '100,000g',     amount: 100000            },
+      { label: '10,000g',      amount: 10000             },
+      { label: '5x BET',       amount: -1, type: 'bet5x' },
+      { label: '25,000g',      amount: 25000             },
+      { label: 'JACKPOT 500k', amount: 500000            },
+      { label: '10x BET',      amount: -1, type: 'bet10x'},
+      { label: 'FREE SPIN',    amount: 0, type: 'freespin'},
+      { label: '50,000g',      amount: 50000             },
     ];
 
     let _wheelSpinning = false;
     let _wheelAngle    = 0;
     let _wheelAnimId   = null;
-
-    // Preload wheel image
-    const _wheelImg = new Image();
-    _wheelImg.src = 'assets/bonus/wheel.png';
 
     function drawWheel(angle) {
       const canvas = document.getElementById('wheelCanvas');
@@ -803,53 +878,120 @@
       const ctx = canvas.getContext('2d');
       const cx  = canvas.width  / 2;
       const cy  = canvas.height / 2;
+      const r   = cx - 4;
+      const n   = WHEEL_PRIZES.length; // 15
+      const arc = (2 * Math.PI) / n;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (_wheelImg.complete && _wheelImg.naturalWidth > 0) {
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(angle);
-        ctx.drawImage(_wheelImg, -cx, -cy, canvas.width, canvas.height);
-        ctx.restore();
-      } else {
-        // Fallback: plain gold circle while image loads
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // Outer gold ring
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#b8860b';
+      ctx.fill();
+
+      // Draw slices
+      for (let i = 0; i < n; i++) {
+        const startA = i * arc - Math.PI / 2;
+        const endA   = startA + arc;
         ctx.beginPath();
-        ctx.arc(cx, cy, cx - 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffd700';
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, startA, endA);
+        ctx.closePath();
+        ctx.fillStyle = i % 2 === 0 ? '#cc0000' : '#ffffff';
         ctx.fill();
-        _wheelImg.onload = () => drawWheel(angle);
+        ctx.strokeStyle = '#b8860b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
       }
 
-      // Center cap on top
+      // Draw labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < n; i++) {
+        const midA = i * arc - Math.PI / 2 + arc / 2;
+        const tx   = Math.cos(midA) * (r * 0.68);
+        const ty   = Math.sin(midA) * (r * 0.68);
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(midA + Math.PI / 2);
+        const isRed = i % 2 === 0;
+        ctx.fillStyle = isRed ? '#ffffff' : '#000000';
+        ctx.font = 'bold 12px Arial';
+        ctx.shadowColor = isRed ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.4)';
+        ctx.shadowBlur = 3;
+        ctx.fillText(WHEEL_PRIZES[i].label, 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      // Outer border ring
       ctx.beginPath();
-      ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(cx, cy, 26, 0, Math.PI * 2);
       ctx.fillStyle = '#ffd700';
       ctx.fill();
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.stroke();
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 11px Georgia';
+      ctx.font = 'bold 10px Georgia';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('SPIN', cx, cy);
     }
 
-    function startBonusRound() {
-      _wheelSpinning = false;
-      _wheelAngle    = 0;
+    // Spins awarded based on scatter count: 3->1, 4->3, 5->5
+    let _wheelSpinsTotal     = 1;
+    let _wheelSpinsRemaining = 0;
+
+    function scatterCountToSpins(count) {
+      if (count >= 5) return 5;
+      if (count >= 4) return 3;
+      return 1;
+    }
+
+    function updateSpinsDisplay() {
+      const el = document.getElementById('bonusSpinsLeft');
+      if (!el) return;
+      if (_wheelSpinsRemaining > 0) {
+        el.textContent = String.fromCodePoint(0x2728) + ' ' + _wheelSpinsRemaining + ' SPIN' + (_wheelSpinsRemaining !== 1 ? 'S' : '') + ' REMAINING';
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    function startBonusRound(scatterCount) {
+      _wheelSpinning       = false;
+      _wheelAngle          = 0;
+      _wheelSpinsTotal     = scatterCountToSpins(scatterCount || _lastWinScatters || 3);
+      _wheelSpinsRemaining = _wheelSpinsTotal;
       document.getElementById('wheelResult').textContent = '';
       document.getElementById('bonusSpinBtn').disabled = false;
       document.getElementById('bonusSpinBtn').style.display = 'inline-block';
       document.getElementById('bonusDoneBtn').style.display = 'none';
       document.getElementById('bonusOverlay').classList.add('active');
+      updateSpinsDisplay();
       drawWheel(0);
     }
 
     window.spinWheel = function() {
-      if (_wheelSpinning) return;
+      if (_wheelSpinning || _wheelSpinsRemaining <= 0) return;
       _wheelSpinning = true;
+      _wheelSpinsRemaining--;
+      updateSpinsDisplay();
       document.getElementById('bonusSpinBtn').disabled = true;
       document.getElementById('wheelResult').textContent = '';
 
@@ -911,7 +1053,13 @@
       document.getElementById('wheelResult').textContent = msg;
       setTimeout(() => {
         stopFireworks();
-        document.getElementById('bonusDoneBtn').style.display = 'inline-block';
+        if (_wheelSpinsRemaining > 0) {
+          document.getElementById('bonusSpinBtn').disabled = false;
+          document.getElementById('wheelResult').textContent = msg + '  �  Spin again!';
+        } else {
+          document.getElementById('bonusDoneBtn').style.display = 'inline-block';
+          updateSpinsDisplay();
+        }
       }, 3000);
     }
 
