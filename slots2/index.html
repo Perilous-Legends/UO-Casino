@@ -610,6 +610,55 @@
       const ptInner = document.querySelector('.smg-paytable-inner');
       if (!ptInner) { setTimeout(injectScatterNote, 500); return; }
       const symbols = ptInner.querySelectorAll('.smg-paytable-symbol');
+      // Debug button - always visible in bottom-right
+      if (!document.getElementById('ptDbgBtn')) {
+        const dbgBtn = document.createElement('button');
+        dbgBtn.id = 'ptDbgBtn';
+        dbgBtn.textContent = '? Debug Layout';
+        dbgBtn.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99999;padding:8px 16px;' +
+          'background:#111;color:#ffd700;border:1px solid #ffd700;border-radius:6px;cursor:pointer;font-size:13px;';
+        let dbgPanel = null;
+        dbgBtn.onclick = function() {
+          if (dbgPanel) { dbgPanel.remove(); dbgPanel = null; return; }
+          dbgPanel = document.createElement('div');
+          dbgPanel.style.cssText = 'position:fixed;bottom:50px;right:12px;z-index:99999;background:rgba(0,0,0,0.92);' +
+            'color:#fff;padding:14px 18px;border-radius:10px;font-family:monospace;font-size:12px;' +
+            'min-width:270px;border:1px solid #888;';
+          function mkS(id,lbl,min,max,val,step) {
+            return '<div style="margin-bottom:8px"><label>' + lbl + ': <span id="' + id + 'V">' + val + '</span></label><br>' +
+              '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + (step||1) + '" value="' + val + '" style="width:100%"></div>';
+          }
+          dbgPanel.innerHTML = '<div style="font-size:13px;font-weight:bold;color:#ffd700;margin-bottom:10px;">?? Paytable Layout</div>' +
+            mkS('dImg','Image size (px)',60,400,200) +
+            mkS('dFnt','Rules font (rem)',0.5,2.5,1.1,0.05) +
+            mkS('dPad','Rules padding (px)',4,60,12) +
+            mkS('dSym','Symbol padding (px)',0,100,20) +
+            '<div id="dOut" style="margin-top:8px;padding:6px;background:#111;border-radius:4px;font-size:10px;color:#adf;"></div>';
+          document.body.appendChild(dbgPanel);
+          function applyD() {
+            var iSz = parseFloat(document.getElementById('dImg').value);
+            var fSz = parseFloat(document.getElementById('dFnt').value);
+            var pSz = parseFloat(document.getElementById('dPad').value);
+            var sSz = parseFloat(document.getElementById('dSym').value);
+            document.getElementById('dImgV').textContent = iSz;
+            document.getElementById('dFntV').textContent = fSz;
+            document.getElementById('dPadV').textContent = pSz;
+            document.getElementById('dSymV').textContent = sSz;
+            var note = document.querySelector('.scatter-spin-rules');
+            var sym  = note ? note.parentElement : null;
+            if (sym) {
+              sym.style.padding = sSz + 'px 0';
+              var img = sym.querySelector('img');
+              if (img) { img.style.width = iSz + 'px'; img.style.height = iSz + 'px'; }
+              if (note) { note.style.fontSize = fSz + 'rem'; note.style.padding = pSz + 'px ' + Math.round(pSz*1.5) + 'px'; }
+            }
+            document.getElementById('dOut').textContent = 'img:' + iSz + 'px font:' + fSz + 'rem pad:' + pSz + 'px symPad:' + sSz + 'px';
+          }
+          dbgPanel.querySelectorAll('input').forEach(function(s){ s.addEventListener('input', applyD); });
+          applyD();
+        };
+        document.body.appendChild(dbgBtn);
+      }
       symbols.forEach(function(sym) {
         const img = sym.querySelector('img');
         if (img && img.src && img.src.includes('scatter')) {
