@@ -459,13 +459,23 @@
               spinActive = false;
               const total = scatterReels.size;
               const effectiveTotal = (window._forceScatter && total < 3) ? 3 : total;
-              if (total >= 3 || window._forceScatter) {
+              const linesActive = parseInt(document.querySelector('.smg-label.smg-label_lines') && document.querySelector('.smg-label.smg-label_lines').textContent) || 20;
+              const bonusEligible = linesActive >= 20 || window._forceScatter;
+              if ((total >= 3 || window._forceScatter) && bonusEligible) {
                 // Go straight to the prize wheel
                 origSetTO(() => {
                   _lastWinScatters = effectiveTotal; showOpenChestsBanner(effectiveTotal, () => startBonusRound(effectiveTotal));
+
+                }, 800);
+              } else if (total >= 3 && !bonusEligible) {
+                origSetTO(() => {
+                  const warn = document.createElement('div');
+                  warn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.92);color:#ff9999;padding:20px 32px;border-radius:10px;font-family:Georgia,serif;font-size:1.2rem;text-align:center;z-index:9999;border:1px solid #ff6666;';
+                  warn.innerHTML = '?? <b>BONUS WHEELS FOUND!</b><br><br>Play all <b>20 lines</b> to qualify<br>for the bonus wheel spin.';
+                  document.body.appendChild(warn);
+                  setTimeout(() => warn.remove(), 3500);
                 }, 800);
               }
-            }
           }
         }
         return origPlay.apply(this, arguments);
@@ -493,7 +503,7 @@
   <div id="bonusOverlay">
     <div id="bonusTitle">✦ BONUS WHEEL ✦</div>
     <div id="bonusSubtitle">SPIN THE WHEEL � CLAIM YOUR PRIZE</div>
-    <div id="bonusSpinsInfo" style="font-family:Georgia,serif;font-size:1.05rem;color:#ffd700;letter-spacing:2px;margin:6px 0 0;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.7);">?? 3 Wheels = 1 Spin &nbsp;|&nbsp; 4 Wheels = 3 Spins &nbsp;|&nbsp; 5 Wheels = 5 Spins</div>
+    <div id="bonusSpinsInfo" style="font-family:Georgia,serif;font-size:1.05rem;color:#ffd700;letter-spacing:2px;margin:6px 0 0;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.7);">3 Wheels = 1 Spin &nbsp;|&nbsp; 4 Wheels = 3 Spins &nbsp;|&nbsp; 5 Wheels = 5 Spins &nbsp;|&nbsp; <span style="color:#ff9999;">All 20 lines required</span></div>
     <div id="bonusSpinsLeft" style="font-family:Georgia,serif;font-size:1.3rem;color:#cc99ff;letter-spacing:2px;margin:4px 0 0;text-align:center;min-height:1.6rem;"></div>
     <div id="wheelWrap">
       <canvas id="wheelCanvas" width="500" height="500"></canvas>
@@ -569,7 +579,8 @@
           note.innerHTML = '<b>BONUS WHEEL</b><br>' +
             '3 Wheels = 1 Spin<br>' +
             '4 Wheels = 3 Spins<br>' +
-            '5 Wheels = 5 Spins';
+            '5 Wheels = 5 Spins<br>' +
+            '<span style="color:#ff9999;font-size:0.72rem;">Must play all 20 lines</span>';
           sym.appendChild(note);
         }
       });
