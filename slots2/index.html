@@ -327,12 +327,36 @@
       return origSetTO.apply(window, arguments);
     };
 
-    // Phase 2 no longer needed for timing -- just keep scatterSet tagging for the chest overlay
+    // Phase 2: tag scatter canvases + draw glow halo whenever scatter is rendered on the reels
     CanvasRenderingContext2D.prototype.drawImage = function(img, x, y) {
+      // Tag scatter canvases during load
       if (img instanceof HTMLImageElement &&
           typeof img.src === 'string' && img.src.includes('scatter.png')) {
         scatterSet.add(this.canvas);
       }
+
+      // Draw glow around scatter when it appears on the main game canvas
+      if (img instanceof HTMLCanvasElement && scatterSet.has(img) &&
+          typeof x === 'number' && typeof y === 'number') {
+        const w = img.width || 200;
+        const h = img.height || 200;
+        this.save();
+        // Pulsing glow: cycle through time for animated effect
+        const t    = Date.now();
+        const pulse = 0.6 + 0.4 * Math.sin(t / 300);
+        this.shadowColor  = `rgba(255, 215, 0, ${pulse})`;
+        this.shadowBlur   = 28 * pulse;
+        this.shadowOffsetX = 0;
+        this.shadowOffsetY = 0;
+        // Draw twice so glow is visible on top of sym_bg
+        origDraw.apply(this, arguments);
+        this.shadowBlur   = 14 * pulse;
+        this.shadowColor  = `rgba(255, 165, 0, ${pulse * 0.7})`;
+        origDraw.apply(this, arguments);
+        this.restore();
+        return;
+      }
+
       return origDraw.apply(this, arguments);
     };
 
