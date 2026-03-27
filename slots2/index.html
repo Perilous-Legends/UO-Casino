@@ -344,14 +344,17 @@
         // Pulsing glow: cycle through time for animated effect
         const t    = Date.now();
         const pulse = 0.6 + 0.4 * Math.sin(t / 300);
-        this.shadowColor  = `rgba(255, 215, 0, ${pulse})`;
-        this.shadowBlur   = 28 * pulse;
         this.shadowOffsetX = 0;
         this.shadowOffsetY = 0;
-        // Draw twice so glow is visible on top of sym_bg
+        // Three passes for a deep, rich glow
+        this.shadowColor = `rgba(255, 255, 100, ${pulse})`;
+        this.shadowBlur  = 60 * pulse;
         origDraw.apply(this, arguments);
-        this.shadowBlur   = 14 * pulse;
-        this.shadowColor  = `rgba(255, 165, 0, ${pulse * 0.7})`;
+        this.shadowColor = `rgba(255, 215, 0, ${pulse})`;
+        this.shadowBlur  = 40 * pulse;
+        origDraw.apply(this, arguments);
+        this.shadowColor = `rgba(255, 140, 0, ${pulse * 0.9})`;
+        this.shadowBlur  = 20 * pulse;
         origDraw.apply(this, arguments);
         this.restore();
         return;
