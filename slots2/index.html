@@ -248,88 +248,82 @@
 <body>
   <div id="slot-machine"></div>
 
-  <!-- SCATTER SOUND: fires instantly whenever a scatter symbol is drawn to the reel canvas.
-       The engine pre-renders each symbol into HTMLCanvasElement objects (speed_frames).
-       We fingerprint scatter's canvas by replicating the engine's compositing, then hook
-       drawImage to match by pixel comparison. Once identified, cached in a WeakSet for speed. -->
+  <!-- SCATTER SOUND: fires when a reel STOPS and that reel shows a scatter symbol.
+       Hooks createjs.Sound.play to detect each reel-stop event (stop.wav fires once per reel),
+       then pixel-samples the game canvas at that reel's column to detect the scatter's
+       distinctive hot-pink/magenta color. -->
   <script>
   (function() {
-    const _origDraw = CanvasRenderingContext2D.prototype.drawImage;
-    const _isScatter    = new WeakSet();
-    const _isNotScatter = new WeakSet();
-    let   _refPixels    = null;
-    let   _cooldown     = false;
-
-    const SAMPLES = [[50,50],[100,100],[150,80],[80,150],[130,60]];
-
-    function sampleCanvas(canvas) {
-      try {
-        const ctx = canvas.getContext('2d');
-        return SAMPLES.map(([x, y]) => {
-          const d = ctx.getImageData(x, y, 1, 1).data;
-          return (d[0] << 16) | (d[1] << 8) | d[2];
-        });
-      } catch(e) { return null; }
-    }
-
-    function buildRef() {
-      let n = 0;
-      const bg  = new Image();
-      const sym = new Image();
-      function onLoad() {
-        if (++n < 2) return;
-        const c = document.createElement('canvas');
-        c.width = c.height = 200;
-        const ctx = c.getContext('2d');
-        // Replicate engine speed_frame[0]: draw sym_bg centered, then symbol centered
-        ctx.drawImage(bg,  Math.round((200 - bg.width)  / 2), Math.round((200 - bg.height)  / 2));
-        ctx.drawImage(sym, Math.round((200 - sym.width) / 2), Math.round((200 - sym.height) / 2));
-        _refPixels = sampleCanvas(c);
-      }
-      bg.onload  = sym.onload  = onLoad;
-      bg.onerror = sym.onerror = onLoad;
-      bg.src  = 'assets/images/slot-machine/sym_bg.png';
-      sym.src = 'assets/images/symbols/scatter.png';
-    }
-
-    function checkCanvas(canvas) {
-      if (_isScatter.has(canvas))    return true;
-      if (_isNotScatter.has(canvas)) return false;
-      if (!_refPixels)               return false;
-
-      const fp = sampleCanvas(canvas);
-      if (!fp) { _isNotScatter.add(canvas); return false; }
-
-      let diff = 0;
-      for (let i = 0; i < fp.length; i++) {
-        const ar = (_refPixels[i] >> 16) & 0xff, ag = (_refPixels[i] >> 8) & 0xff, ab = _refPixels[i] & 0xff;
-        const br = (fp[i] >> 16) & 0xff,         bg = (fp[i] >> 8) & 0xff,         bb = fp[i] & 0xff;
-        diff += Math.abs(ar-br) + Math.abs(ag-bg) + Math.abs(ab-bb);
-      }
-      const avg = diff / (fp.length * 3);
-
-      if (avg < 8) { _isScatter.add(canvas); return true; }
-      _isNotScatter.add(canvas); return false;
-    }
-
-    CanvasRenderingContext2D.prototype.drawImage = function(img) {
-      // Symbol speed_frame canvases are 200px wide, height 200-210 (low-to-mid speed)
-      if (!_cooldown && img instanceof HTMLCanvasElement &&
-          img.width === 200 && img.height >= 200 && img.height <= 210) {
-        if (checkCanvas(img)) {
-          _cooldown = true;
-          const snd = document.getElementById('sndScatter');
-          if (snd) { snd.currentTime = 0; snd.play().catch(() => {}); }
-          setTimeout(() => { _cooldown = false; }, 450);
-        }
-      }
-      return _origDraw.apply(this, arguments);
-    };
-
     window.__plGetScatterCount = function() { return 0; };
     window.__plResetScatterCount = function() {};
 
-    buildRef();
+    // Canvas layout (internal 1620x600 resolution, never changes):
+    // Symbol center x = 245 + 228 * reelIndex
+    // Symbol center y = 100 + 200 * row  (rows 0,1,2)
+    const REEL_CENTERS_X = [245, 473, 701, 929, 1157];
+    const ROW_CENTERS_Y  = [100, 300, 500];
+
+    function hasScatterInReel(reelIdx) {
+      const canvas = document.querySelector('#slot-machine canvas');
+      if (!canvas) return false;
+      let ctx;
+      try { ctx = canvas.getContext('2d'); } catch(e) { return false; }
+      const cx = REEL_CENTERS_X[reelIdx];
+
+      for (const cy of ROW_CENTERS_Y) {
+        let pinkCount = 0;
+        for (let dx = -50; dx <= 50; dx += 10) {
+          for (let dy = -50; dy <= 50; dy += 10) {
+            const x = cx + dx, y = cy + dy;
+            if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+            try {
+              const d = ctx.getImageData(x, y, 1, 1).data;
+              // Scatter symbol: hot pink/magenta background -- high R, high B, low G
+              if (d[3] > 100 && d[0] > 160 && d[2] > 120 && d[1] < 70) pinkCount++;
+            } catch(e) {}
+          }
+        }
+        if (pinkCount >= 4) return true;
+      }
+      return false;
+    }
+
+    function playScatterSound() {
+      const snd = document.getElementById('sndScatter');
+      if (!snd) return;
+      snd.currentTime = 0;
+      snd.play().catch(() => {});
+    }
+
+    let _reelStopCount = 0;
+
+    function onReelStop() {
+      const reelIdx = _reelStopCount % 5;
+      _reelStopCount++;
+
+      // Wait one frame for the canvas to render the stopped position, then check
+      setTimeout(() => {
+        if (hasScatterInReel(reelIdx)) playScatterSound();
+      }, 60);
+    }
+
+    function hookStopSound() {
+      if (!window.createjs || !window.createjs.Sound) return false;
+
+      const origPlay = createjs.Sound.play;
+      createjs.Sound.play = function(id) {
+        if (typeof id === 'string' && id.endsWith('stop.wav')) {
+          onReelStop();
+        }
+        return origPlay.apply(this, arguments);
+      };
+      return true;
+    }
+
+    // createjs loads async -- poll until ready
+    const poll = setInterval(() => {
+      if (hookStopSound()) clearInterval(poll);
+    }, 200);
   })();
   </script>
 
