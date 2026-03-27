@@ -283,7 +283,10 @@
       snd.play().catch(() => {});
     }
 
-    // Phase 1: intercept setTimeout burst to identify scatter reels ahead of time
+    // Deceleration time: approx ms from stopSpin call to visual snap (speed_max=4000, delta_stop_max=800)
+    const DECEL_MS = 350;
+
+    // Phase 1: intercept setTimeout burst, identify scatter reels, schedule sound AHEAD of visual snap
     window.setTimeout = function(fn, delay) {
       if (spinActive && typeof fn === 'function') {
         const now = Date.now();
@@ -303,7 +306,12 @@
                   if (strip) {
                     for (let row = 0; row < 3; row++) {
                       const sym = cfg.symbols[strip[(r + row) % strip.length]];
-                      if (sym && sym.scatter) { scatterReels.add(reelIdx); break; }
+                      if (sym && sym.scatter) {
+                        scatterReels.add(reelIdx);
+                        // Fire sound DECEL_MS before visual snap
+                        origSetTO(playScatterSound, DECEL_MS);
+                        break;
+                      }
                     }
                   }
                 }
@@ -319,31 +327,12 @@
       return origSetTO.apply(window, arguments);
     };
 
-    // Phase 2: watch drawImage -- fire the instant scatter draws at a snapped Y on a flagged reel
+    // Phase 2 no longer needed for timing -- just keep scatterSet tagging for the chest overlay
     CanvasRenderingContext2D.prototype.drawImage = function(img, x, y) {
       if (img instanceof HTMLImageElement &&
           typeof img.src === 'string' && img.src.includes('scatter.png')) {
         scatterSet.add(this.canvas);
       }
-
-      if (spinActive &&
-          img instanceof HTMLCanvasElement && scatterSet.has(img) &&
-          typeof x === 'number' && typeof y === 'number') {
-        for (let i = 0; i < 5; i++) {
-          if (scatterReels.has(i) && !firedReels.has(i) && Math.abs(x - REEL_X[i]) < X_TOL) {
-            const yr = Math.round(y);
-            for (const sy of SNAP_Y) {
-              if (Math.abs(yr - sy) <= Y_TOL) {
-                firedReels.add(i);
-                playScatterSound();
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-
       return origDraw.apply(this, arguments);
     };
 
