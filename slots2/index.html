@@ -315,12 +315,9 @@
             reelCounter++;
             if (reelCounter >= 5) spinActive = false;
 
-            // Wait 2 rAF frames (~33ms) for stopped frame to render, then open 1-frame window
-            setTimeout(() => {
-              checkReel = reelIdx;
-              // Close window after one frame -- don't leave it open
-              setTimeout(() => { if (checkReel === reelIdx) checkReel = -1; }, 32);
-            }, 33);
+            // Open check window immediately on stop.wav -- no delay
+            checkReel = reelIdx;
+            setTimeout(() => { if (checkReel === reelIdx) checkReel = -1; }, 80);
           }
         }
         return origPlay.apply(this, arguments);
