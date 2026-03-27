@@ -417,11 +417,9 @@
               spinActive = false;
               const total = scatterReels.size;
               if (total >= 3) {
-                // Wait for win display then show banner + chest overlay
+                // Go straight to the prize wheel
                 origSetTO(() => {
-                  showOpenChestsBanner(total, () => {
-                    if (typeof triggerChestOverlay === 'function') triggerChestOverlay(total);
-                  });
+                  showOpenChestsBanner(total, () => startBonusRound());
                 }, 800);
               }
             }
@@ -1001,9 +999,9 @@
     // T/Y/U = chest overlay with 3/4/5 scatters
     // W     = go straight to the prize wheel
     document.addEventListener('keydown', (e) => {
-      if(e.key === 't' || e.key === 'T') triggerChestOverlay(3);
-      if(e.key === 'y' || e.key === 'Y') triggerChestOverlay(4);
-      if(e.key === 'u' || e.key === 'U') triggerChestOverlay(5);
+      if(e.key === 't' || e.key === 'T') showOpenChestsBanner(3, () => startBonusRound());
+      if(e.key === 'y' || e.key === 'Y') showOpenChestsBanner(4, () => startBonusRound());
+      if(e.key === 'u' || e.key === 'U') showOpenChestsBanner(5, () => startBonusRound());
       if(e.key === 'w' || e.key === 'W') startBonusRound();
     });
 
