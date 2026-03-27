@@ -266,9 +266,10 @@
     const X_TOL  = 30;  // tight: only exact reel position, not neighbours
 
     // Per-reel check: after stop, did scatter draw here in one frame?
-    let checkReel  = -1;   // reel index we're currently checking (-1 = idle)
+    let checkReel   = -1;   // reel index we're currently checking (-1 = idle)
     let reelCounter = 0;
     let spinActive  = false;
+    let firedReels  = new Set(); // reels that already played sound this spin
 
     function playScatterSound() {
       const snd = document.getElementById('sndScatter');
@@ -289,8 +290,9 @@
           img instanceof HTMLCanvasElement &&
           scatterSet.has(img) &&
           typeof x === 'number' &&
-          Math.abs(x - REEL_X[checkReel]) < X_TOL) {
-        const detected = checkReel;
+          Math.abs(x - REEL_X[checkReel]) < X_TOL &&
+          !firedReels.has(checkReel)) {
+        firedReels.add(checkReel);
         checkReel = -1;
         playScatterSound();
       }
@@ -308,6 +310,7 @@
           if (id.endsWith('spin.wav') || id.endsWith('start.wav')) {
             reelCounter = 0;
             spinActive  = true;
+            firedReels  = new Set();
           }
           // Each reel stop fires stop.wav exactly once, in order 0-4
           if (id.endsWith('stop.wav') && spinActive) {
