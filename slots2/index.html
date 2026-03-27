@@ -444,16 +444,50 @@
     <button id="chestContinueBtn" onclick="closeChestOverlay()">CONTINUE</button>
   </div>
 
-  <!-- BONUS ROUND OVERLAY -->
+  <!-- BONUS ROUND OVERLAY - PRIZE WHEEL -->
   <div id="bonusOverlay">
-    <img src="assets/bonus/chest-bonus-img.png" style="max-height:220px;object-fit:contain;margin-bottom:20px;filter:drop-shadow(0 0 30px rgba(255,215,0,0.8));">
-    <div id="bonusTitle">✦ BONUS ROUND ✦</div>
-    <div id="bonusSubtitle">FREE SPINS — 3x MULTIPLIER</div>
-    <div id="bonusSpinsLeft"></div>
-    <div id="bonusTotal"></div>
-    <button id="bonusSpinBtn" onclick="doBonusSpin()">SPIN FREE</button>
+    <div id="bonusTitle">✦ BONUS WHEEL ✦</div>
+    <div id="bonusSubtitle">SPIN THE WHEEL — CLAIM YOUR PRIZE</div>
+    <div id="wheelWrap">
+      <canvas id="wheelCanvas" width="500" height="500"></canvas>
+      <div id="wheelPointer">▼</div>
+    </div>
+    <div id="wheelResult"></div>
+    <button id="bonusSpinBtn" onclick="spinWheel()">SPIN WHEEL</button>
     <button id="bonusDoneBtn" onclick="closeBonusOverlay()">COLLECT & CONTINUE</button>
   </div>
+
+  <style>
+    #wheelWrap {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 16px auto 0;
+    }
+    #wheelCanvas {
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(255,215,0,0.6), 0 0 80px rgba(255,165,0,0.3);
+    }
+    #wheelPointer {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2.4rem;
+      color: #ffd700;
+      text-shadow: 0 0 12px rgba(255,215,0,0.9);
+      z-index: 10;
+    }
+    #wheelResult {
+      margin-top: 20px;
+      font-size: 1.6rem;
+      font-family: Georgia, serif;
+      color: #4aff7a;
+      min-height: 2rem;
+      text-align: center;
+      text-shadow: 0 0 12px rgba(74,255,122,0.6);
+    }
+  </style>
 
   <!-- AUDIO -->
   <audio id="sndChestGold"      src="assets/bonus/chest-gold.mp3"  preload="auto"></audio>
@@ -737,59 +771,171 @@
       document.getElementById('chestOverlay').classList.remove('active');
     }
 
-    // ---- Bonus Round Logic ----
-    function startBonusRound() {
-      _bonusWinnings  = 0;
-      _bonusSpinsLeft = BONUS_SPINS;
+    // ---- Bonus Wheel Logic ----
+    const WHEEL_PRIZES = [
+      { label: '5,000g',        color: '#c0392b', amount: 5000   },
+      { label: '10,000g',       color: '#8e44ad', amount: 10000  },
+      { label: '25,000g',       color: '#2980b9', amount: 25000  },
+      { label: '50,000g',       color: '#27ae60', amount: 50000  },
+      { label: '100,000g',      color: '#d35400', amount: 100000 },
+      { label: '2x BET',        color: '#16a085', amount: -1, type: 'bet2x'  },
+      { label: '5x BET',        color: '#1a5276', amount: -1, type: 'bet5x'  },
+      { label: '10x BET',       color: '#7d6608', amount: -1, type: 'bet10x' },
+      { label: 'JACKPOT 500k',  color: '#922b21', amount: 500000 },
+      { label: 'FREE SPIN',     color: '#117a65', amount: 0, type: 'freespin' },
+    ];
 
-      document.getElementById('bonusSpinsLeft').textContent = _bonusSpinsLeft + ' free spins remaining';
-      document.getElementById('bonusTotal').textContent = '';
+    let _wheelSpinning = false;
+    let _wheelAngle    = 0;
+    let _wheelAnimId   = null;
+
+    function drawWheel(angle) {
+      const canvas = document.getElementById('wheelCanvas');
+      if (!canvas) return;
+      const ctx  = canvas.getContext('2d');
+      const cx   = canvas.width  / 2;
+      const cy   = canvas.height / 2;
+      const r    = cx - 10;
+      const n    = WHEEL_PRIZES.length;
+      const arc  = (2 * Math.PI) / n;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd700';
+      ctx.fill();
+
+      for (let i = 0; i < n; i++) {
+        const start = angle + i * arc;
+        const end   = start + arc;
+
+        // Slice
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = WHEEL_PRIZES[i].color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur  = 4;
+        ctx.font = 'bold 15px Georgia';
+        ctx.fillText(WHEEL_PRIZES[i].label, r - 14, 5);
+        ctx.restore();
+      }
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd700';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Georgia';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SPIN', cx, cy);
+    }
+
+    function startBonusRound() {
+      _wheelSpinning = false;
+      _wheelAngle    = 0;
+      document.getElementById('wheelResult').textContent = '';
       document.getElementById('bonusSpinBtn').disabled = false;
       document.getElementById('bonusSpinBtn').style.display = 'inline-block';
       document.getElementById('bonusDoneBtn').style.display = 'none';
       document.getElementById('bonusOverlay').classList.add('active');
+      drawWheel(0);
     }
 
-    window.doBonusSpin = function() {
-      if(_bonusSpinsLeft <= 0) return;
-      stopFireworks();
+    window.spinWheel = function() {
+      if (_wheelSpinning) return;
+      _wheelSpinning = true;
+      document.getElementById('bonusSpinBtn').disabled = true;
+      document.getElementById('wheelResult').textContent = '';
 
-      // Simulate a spin result using our reel/payout config
-      const spinWin = simulateSpin();
-      const boosted = Math.round(spinWin * BONUS_MULTIPLIER);
-      _bonusWinnings += boosted;
-      _bonusSpinsLeft--;
+      const n       = WHEEL_PRIZES.length;
+      const arc     = (2 * Math.PI) / n;
+      // Pick winning slice
+      const winner  = Math.floor(Math.random() * n);
+      // Total spin: multiple full rotations + land on winner
+      // Pointer is at top (angle offset = -PI/2). Winning slice center = winner*arc + arc/2
+      // We want that to be at top after spin: finalAngle = -winner*arc - arc/2 + (random full rotations)
+      const spins   = 5 + Math.floor(Math.random() * 4); // 5-8 full rotations
+      const target  = -winner * arc - arc / 2 + spins * 2 * Math.PI;
+      const start   = _wheelAngle;
+      const duration = 4000 + Math.random() * 1500; // 4-5.5s
+      const startTime = performance.now();
 
-      document.getElementById('bonusSpinsLeft').textContent = _bonusSpinsLeft + ' free spins remaining';
-      if(boosted > 0) {
-        document.getElementById('bonusTotal').textContent =
-          '🎰 +' + boosted.toLocaleString() + 'g  (Total: +' + _bonusWinnings.toLocaleString() + 'g)';
-      } else {
-        document.getElementById('bonusTotal').textContent =
-          'No win  (Total: +' + _bonusWinnings.toLocaleString() + 'g)';
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 4);
       }
 
-      if(_bonusSpinsLeft <= 0) {
-        document.getElementById('bonusSpinBtn').disabled = true;
-        setTimeout(() => {
-          document.getElementById('bonusTotal').textContent =
-            '✦ BONUS COMPLETE: +' + _bonusWinnings.toLocaleString() + 'g';
-          document.getElementById('bonusDoneBtn').style.display = 'inline-block';
-        }, 500);
+      function animate(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        _wheelAngle = start + (target - start) * easeOut(t);
+        drawWheel(_wheelAngle);
+
+        if (t < 1) {
+          _wheelAnimId = requestAnimationFrame(animate);
+        } else {
+          _wheelSpinning = false;
+          showWheelResult(WHEEL_PRIZES[winner]);
+        }
       }
+
+      _wheelAnimId = requestAnimationFrame(animate);
+      playBonusSound();
     };
 
+    function showWheelResult(prize) {
+      stopFireworks();
+      startFireworks();
+
+      let amount = prize.amount;
+      const bet  = (_betPerLine || 100) * (_lines || 20);
+
+      if (prize.type === 'bet2x')    amount = bet * 2;
+      if (prize.type === 'bet5x')    amount = bet * 5;
+      if (prize.type === 'bet10x')   amount = bet * 10;
+      if (prize.type === 'freespin') amount = 0;
+
+      let msg = '';
+      if (prize.type === 'freespin') {
+        msg = '🎰 FREE SPIN AWARDED!';
+      } else {
+        msg = '✦ YOU WIN ' + amount.toLocaleString() + 'g! ✦';
+        awardBalance(amount);
+      }
+
+      document.getElementById('wheelResult').textContent = msg;
+      setTimeout(() => {
+        stopFireworks();
+        document.getElementById('bonusDoneBtn').style.display = 'inline-block';
+      }, 3000);
+    }
+
     window.closeBonusOverlay = function() {
+      if (_wheelAnimId) { cancelAnimationFrame(_wheelAnimId); _wheelAnimId = null; }
+      stopFireworks();
       document.getElementById('bonusOverlay').classList.remove('active');
-      // Add winnings to balance via the engine's balance element
-      awardBalance(_bonusWinnings);
     };
 
     function awardBalance(amount) {
-      // Try to find and update the balance display
-      const balEls = document.querySelectorAll('[class*="label_balance"], [class*="balance"]');
-      // Engine manages balance internally - we can't directly inject without accessing internals
-      // For now, show a notification
       const note = document.createElement('div');
       note.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:11000;background:rgba(0,0,0,0.85);border:2px solid #4aff7a;color:#4aff7a;font-family:Georgia,serif;font-size:1.3rem;padding:14px 32px;border-radius:8px;text-shadow:0 0 10px rgba(74,255,122,0.5);';
       note.textContent = '✦ +' + amount.toLocaleString() + 'g Bonus Added!';
