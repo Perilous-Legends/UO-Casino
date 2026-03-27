@@ -550,6 +550,61 @@
     // Slow reels by 20% (engine default speed_max is 5000)
     slotMachineConfig.speed_max = 4000;
 
+    // Paytable debugger (press P to toggle)
+    (function() {
+      var panel = null;
+      function buildPanel() {
+        if (panel) { panel.remove(); panel = null; return; }
+        panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;background:rgba(0,0,0,0.9);' +
+          'color:#fff;padding:14px 18px;border-radius:10px;font-family:monospace;font-size:12px;' +
+          'min-width:270px;border:1px solid #888;';
+        panel.innerHTML = '<div style="font-size:14px;font-weight:bold;color:#ffd700;margin-bottom:10px;">?? Paytable Debugger</div>' +
+          mkSlider('imgSize',  'Image size (px)', 80, 400, 200) +
+          mkSlider('noteSize', 'Rules font (rem)', 0.5, 2.5, 1.1, 0.05) +
+          mkSlider('notePad',  'Rules padding (px)', 4, 60, 12) +
+          mkSlider('symPad',   'Symbol padding (px)', 0, 80, 20) +
+          '<div id="ptDbgOut" style="margin-top:10px;padding:8px;background:#111;border-radius:6px;font-size:10px;color:#adf;word-break:break-all;">Values will show here</div>' +
+          '<div style="margin-top:6px;font-size:10px;color:#888;">Press <b>P</b> to hide</div>';
+        document.body.appendChild(panel);
+        panel.querySelectorAll('input[type=range]').forEach(function(s) {
+          s.addEventListener('input', applyDbg);
+        });
+        applyDbg();
+      }
+      function mkSlider(id, label, min, max, val, step) {
+        step = step || 1;
+        return '<div style="margin-bottom:8px;"><label>' + label + ': <span id="' + id + 'Val">' + val + '</span></label><br>' +
+          '<input type="range" id="' + id + 'Sld" min="' + min + '" max="' + max + '" value="' + val + '" step="' + step + '" style="width:100%"></div>';
+      }
+      function getVal(id) { var el = document.getElementById(id+'Sld'); return el ? parseFloat(el.value) : null; }
+      function setLbl(id, v) { var el = document.getElementById(id+'Val'); if(el) el.textContent = v; }
+      function applyDbg() {
+        var imgSize  = getVal('imgSize');
+        var noteSize = getVal('noteSize');
+        var notePad  = getVal('notePad');
+        var symPad   = getVal('symPad');
+        setLbl('imgSize',  imgSize);
+        setLbl('noteSize', noteSize);
+        setLbl('notePad',  notePad);
+        setLbl('symPad',   symPad);
+        var sym = document.querySelector('.smg-paytable-symbol:has(.scatter-spin-rules)');
+        if (!sym) { sym = document.querySelector('.scatter-spin-rules'); if(sym) sym = sym.parentElement; }
+        if (sym) {
+          sym.style.padding = symPad + 'px 0';
+          var img = sym.querySelector('img');
+          if (img) { img.style.width = imgSize + 'px'; img.style.height = imgSize + 'px'; }
+          var note = sym.querySelector('.scatter-spin-rules');
+          if (note) { note.style.fontSize = noteSize + 'rem'; note.style.padding = notePad + 'px ' + (notePad*1.5) + 'px'; }
+        }
+        var out = document.getElementById('ptDbgOut');
+        if (out) out.textContent = 'imgSize:' + imgSize + 'px | noteFont:' + noteSize + 'rem | notePad:' + notePad + 'px | symPad:' + symPad + 'px';
+      }
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'p' || e.key === 'P') buildPanel();
+      });
+    })();
+
     // Inject scatter/wheel spin rules into paytable after engine renders it
     setTimeout(function injectScatterNote() {
       const ptInner = document.querySelector('.smg-paytable-inner');
