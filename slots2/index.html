@@ -553,24 +553,29 @@
     setTimeout(function injectScatterNote() {
       const ptInner = document.querySelector('.smg-paytable-inner');
       if (!ptInner) { setTimeout(injectScatterNote, 500); return; }
-      // Find the scatter symbol entry
       const symbols = ptInner.querySelectorAll('.smg-paytable-symbol');
       symbols.forEach(function(sym) {
         const img = sym.querySelector('img');
         if (img && img.src && img.src.includes('scatter')) {
-          // Only add once
           if (sym.querySelector('.scatter-spin-rules')) return;
+          // Center and enlarge the scatter entry
+          sym.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+            'width:100%;margin:0 auto;padding:16px 0;';
+          if (img) { img.style.cssText = 'width:200px;height:200px;display:block;margin:0 auto 12px;'; }
+          // Enlarge the payout text
+          const lines = sym.querySelectorAll('.smg-lines');
+          lines.forEach(function(l) { l.style.cssText = 'font-size:1.3rem;text-align:center;'; });
           const note = document.createElement('div');
           note.className = 'scatter-spin-rules';
-          note.style.cssText = 'margin-top:8px;padding:6px 10px;background:rgba(255,215,0,0.12);' +
-            'border:1px solid rgba(255,215,0,0.4);border-radius:6px;font-size:0.78rem;' +
-            'color:#ffd700;line-height:1.6;text-align:center;';
-          note.innerHTML = '<b>?? BONUS WHEEL</b><br>' +
+          note.style.cssText = 'margin-top:12px;padding:10px 18px;background:rgba(255,215,0,0.12);' +
+            'border:1px solid rgba(255,215,0,0.4);border-radius:8px;font-size:1rem;' +
+            'color:#ffd700;line-height:1.8;text-align:center;';
           note.innerHTML = '<b>BONUS WHEEL</b><br>' +
             '3 Wheels = 1 Spin<br>' +
             '4 Wheels = 3 Spins<br>' +
             '5 Wheels = 5 Spins<br>' +
-            '<span style="color:#ff9999;font-size:0.72rem;">Must play all 20 lines</span>';
+            '<span style="color:#ff9999;font-size:0.85rem;">Must play all 20 lines</span>';
+          sym.appendChild(note);
         }
       });
     }, 1500);
