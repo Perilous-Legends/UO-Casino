@@ -600,63 +600,68 @@
         document.head.appendChild(s);
       }
 
-      // Append the two bonus paytable images at the bottom with a debugger
+      // Inject bonus images as fixed overlay so clipping never matters
       if (!document.getElementById('bonusWheelImages')) {
-        const PT_IMG1 = { x: 0, y: 0, w: 320 };
-        const PT_IMG2 = { x: 0, y: 0, w: 320 };
         const block = document.createElement('div');
         block.id = 'bonusWheelImages';
-        block.style.cssText = 'width:100%;text-align:center;padding:20px 0 10px;';
+        block.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9000;text-align:center;pointer-events:none;';
         block.innerHTML =
-          '<div id="ptImg1Wrap" style="display:block;margin-bottom:16px;">' +
-            '<img id="ptImg1" src="assets/bonus/pt-image1.png" style="width:' + PT_IMG1.w + 'px;max-width:90%;border-radius:12px;display:block;margin:0 auto;" alt="Paytable Image 1">' +
+          '<div id="ptImg1Wrap" style="pointer-events:auto;margin-bottom:12px;">' +
+            '<img id="ptImg1" src="assets/bonus/pt-image1.png" style="width:280px;border-radius:12px;display:block;margin:0 auto;" alt="Paytable Image 1">' +
           '</div>' +
-          '<div id="ptImg2Wrap" style="display:block;">' +
-            '<img id="ptImg2" src="assets/bonus/pt-image2.png" style="width:' + PT_IMG2.w + 'px;max-width:90%;border-radius:12px;display:block;margin:0 auto;" alt="Paytable Image 2">' +
-          '</div>' +
-          '<div id="ptImgDebug" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.88);border:1px solid #ffd700;border-radius:10px;padding:12px 16px;z-index:99999;font-family:monospace;font-size:12px;color:#fff;min-width:240px;">' +
-            '<div style="color:#ffd700;font-weight:bold;margin-bottom:8px;text-align:center;">📐 Paytable Image Debugger</div>' +
-            '<b>Image 1</b><br>' +
-            'X: <input id="dbg1x" type="range" min="-300" max="300" value="0" style="width:110px"> <span id="dbg1xv">0</span><br>' +
-            'Y: <input id="dbg1y" type="range" min="-300" max="300" value="0" style="width:110px"> <span id="dbg1yv">0</span><br>' +
-            'W: <input id="dbg1w" type="range" min="50" max="700" value="320" style="width:110px"> <span id="dbg1wv">320</span><br>' +
-            '<b style="display:block;margin-top:8px;">Image 2</b>' +
-            'X: <input id="dbg2x" type="range" min="-300" max="300" value="0" style="width:110px"> <span id="dbg2xv">0</span><br>' +
-            'Y: <input id="dbg2y" type="range" min="-300" max="300" value="0" style="width:110px"> <span id="dbg2yv">0</span><br>' +
-            'W: <input id="dbg2w" type="range" min="50" max="700" value="320" style="width:110px"> <span id="dbg2wv">320</span><br>' +
-            '<div style="margin-top:8px;text-align:center;font-size:10px;color:#aaa;">Press <b>C</b> to copy values</div>' +
+          '<div id="ptImg2Wrap" style="pointer-events:auto;">' +
+            '<img id="ptImg2" src="assets/bonus/pt-image2.png" style="width:280px;border-radius:12px;display:block;margin:0 auto;" alt="Paytable Image 2">' +
           '</div>';
-        // Insert in the middle of the symbol list (after 4th symbol row)
-        const symRows = ptInner.querySelectorAll('[class*="paytable-symbol"]');
-        if (symRows.length >= 4 && symRows[3].nextSibling) {
-          ptInner.insertBefore(block, symRows[3].nextSibling);
-        } else {
-          ptInner.appendChild(block);
-        }
+        document.body.appendChild(block);
 
-        setTimeout(function() {
-          function syncPtImgs() {
-            var x1=+document.getElementById('dbg1x').value, y1=+document.getElementById('dbg1y').value, w1=+document.getElementById('dbg1w').value;
-            var x2=+document.getElementById('dbg2x').value, y2=+document.getElementById('dbg2y').value, w2=+document.getElementById('dbg2w').value;
-            document.getElementById('dbg1xv').textContent=x1; document.getElementById('dbg1yv').textContent=y1; document.getElementById('dbg1wv').textContent=w1;
-            document.getElementById('dbg2xv').textContent=x2; document.getElementById('dbg2yv').textContent=y2; document.getElementById('dbg2wv').textContent=w2;
-            var w1el=document.getElementById('ptImg1Wrap'), w2el=document.getElementById('ptImg2Wrap');
-            var i1=document.getElementById('ptImg1'), i2=document.getElementById('ptImg2');
-            if(w1el){w1el.style.marginLeft=x1+'px'; w1el.style.marginTop=y1+'px';}
-            if(w2el){w2el.style.marginLeft=x2+'px'; w2el.style.marginTop=y2+'px';}
-            if(i1) i1.style.width=w1+'px';
-            if(i2){i2.style.width=w2+'px'; i2.style.margin='0 auto';}
+        // Debugger panel
+        const dbg = document.createElement('div');
+        dbg.id = 'ptImgDebug';
+        dbg.style.cssText = 'position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.9);border:1px solid #ffd700;border-radius:10px;padding:12px 16px;z-index:99999;font-family:monospace;font-size:12px;color:#fff;min-width:240px;display:none;';
+        dbg.innerHTML =
+          '<div style="color:#ffd700;font-weight:bold;margin-bottom:8px;text-align:center;">📐 Image Debugger</div>' +
+          '<b>Image 1</b><br>' +
+          'X: <input id="dbg1x" type="range" min="-500" max="500" value="0" style="width:110px"> <span id="dbg1xv">0</span><br>' +
+          'Y: <input id="dbg1y" type="range" min="-500" max="500" value="0" style="width:110px"> <span id="dbg1yv">0</span><br>' +
+          'W: <input id="dbg1w" type="range" min="50" max="700" value="280" style="width:110px"> <span id="dbg1wv">280</span><br>' +
+          '<b style="display:block;margin-top:8px;">Image 2</b>' +
+          'X: <input id="dbg2x" type="range" min="-500" max="500" value="0" style="width:110px"> <span id="dbg2xv">0</span><br>' +
+          'Y: <input id="dbg2y" type="range" min="-500" max="500" value="0" style="width:110px"> <span id="dbg2yv">0</span><br>' +
+          'W: <input id="dbg2w" type="range" min="50" max="700" value="280" style="width:110px"> <span id="dbg2wv">280</span><br>' +
+          '<div style="margin-top:8px;text-align:center;font-size:10px;color:#aaa;">Press <b>C</b> to copy values</div>';
+        document.body.appendChild(dbg);
+
+        // Show debugger only when paytable is open, hide when closed
+        const paytableEl = document.querySelector('.smg-paytable') || document.querySelector('[class*="paytable"]');
+        const observer = new MutationObserver(function() {
+          const pt = document.querySelector('.smg-paytable');
+          const isOpen = pt && (pt.classList.contains('smg-show') || pt.style.display !== 'none');
+          block.style.display = isOpen ? 'block' : 'none';
+          dbg.style.display = isOpen ? 'block' : 'none';
+        });
+        observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class','style'] });
+
+        function syncPtImgs() {
+          var x1=+document.getElementById('dbg1x').value, y1=+document.getElementById('dbg1y').value, w1=+document.getElementById('dbg1w').value;
+          var x2=+document.getElementById('dbg2x').value, y2=+document.getElementById('dbg2y').value, w2=+document.getElementById('dbg2w').value;
+          document.getElementById('dbg1xv').textContent=x1; document.getElementById('dbg1yv').textContent=y1; document.getElementById('dbg1wv').textContent=w1;
+          document.getElementById('dbg2xv').textContent=x2; document.getElementById('dbg2yv').textContent=y2; document.getElementById('dbg2wv').textContent=w2;
+          var w1el=document.getElementById('ptImg1Wrap'), w2el=document.getElementById('ptImg2Wrap');
+          var i1=document.getElementById('ptImg1'), i2=document.getElementById('ptImg2');
+          if(w1el){w1el.style.marginLeft=x1+'px'; w1el.style.marginTop=y1+'px';}
+          if(w2el){w2el.style.marginLeft=x2+'px'; w2el.style.marginTop=y2+'px';}
+          if(i1) i1.style.width=w1+'px';
+          if(i2){i2.style.width=w2+'px'; i2.style.margin='0 auto';}
+        }
+        ['dbg1x','dbg1y','dbg1w','dbg2x','dbg2y','dbg2w'].forEach(function(id){
+          var el=document.getElementById(id); if(el) el.addEventListener('input',syncPtImgs);
+        });
+        document.addEventListener('keydown',function(e){
+          if(e.key==='c'||e.key==='C'){
+            var txt='IMG1: x='+document.getElementById('dbg1x').value+' y='+document.getElementById('dbg1y').value+' w='+document.getElementById('dbg1w').value+'\nIMG2: x='+document.getElementById('dbg2x').value+' y='+document.getElementById('dbg2y').value+' w='+document.getElementById('dbg2w').value;
+            navigator.clipboard.writeText(txt).then(function(){alert('Copied!\n\n'+txt);});
           }
-          ['dbg1x','dbg1y','dbg1w','dbg2x','dbg2y','dbg2w'].forEach(function(id){
-            var el=document.getElementById(id); if(el) el.addEventListener('input',syncPtImgs);
-          });
-          document.addEventListener('keydown',function(e){
-            if(e.key==='c'||e.key==='C'){
-              var txt='IMG1: x='+document.getElementById('dbg1x').value+' y='+document.getElementById('dbg1y').value+' w='+document.getElementById('dbg1w').value+'\nIMG2: x='+document.getElementById('dbg2x').value+' y='+document.getElementById('dbg2y').value+' w='+document.getElementById('dbg2w').value;
-              navigator.clipboard.writeText(txt).then(function(){alert('Copied!\n\n'+txt);});
-            }
-          });
-        }, 300);
+        });
       }
     }, 1500);
 
