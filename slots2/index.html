@@ -589,13 +589,13 @@
         }
       });
 
-      // Hide scatter row - engine renders each symbol as smg-paytable-symbol div,
-      // the scatter one contains a smg-scatter-label. Target by class substring.
-      ptInner.querySelectorAll('[class*="paytable-symbol"]').forEach(function(sym) {
-        if (sym.querySelector('[class*="scatter-label"]') || (sym.innerText && sym.innerText.includes('Scatter'))) {
-          sym.style.setProperty('display','none','important');
-        }
-      });
+      // Hide scatter row via CSS - no timing issues
+      if (!document.getElementById('hideScatterStyle')) {
+        var s = document.createElement('style');
+        s.id = 'hideScatterStyle';
+        s.textContent = '.smg-paytable-symbol:has(.smg-scatter-label) { display: none !important; }';
+        document.head.appendChild(s);
+      }
 
       // Append the two bonus paytable images at the bottom with a debugger
       if (!document.getElementById('bonusWheelImages')) {
