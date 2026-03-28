@@ -589,11 +589,11 @@
         }
       });
 
-      // Hide the scatter row - walk all direct children of ptInner, hide any whose text includes "Scatter"
-      Array.from(ptInner.children).forEach(function(child) {
-        if (child.id) return; // skip our injected elements
-        if (child.innerText && child.innerText.includes('Scatter')) {
-          child.style.setProperty('display','none','important');
+      // Hide scatter row - engine renders each symbol as smg-paytable-symbol div,
+      // the scatter one contains a smg-scatter-label. Target by class substring.
+      ptInner.querySelectorAll('[class*="paytable-symbol"]').forEach(function(sym) {
+        if (sym.querySelector('[class*="scatter-label"]') || (sym.innerText && sym.innerText.includes('Scatter'))) {
+          sym.style.setProperty('display','none','important');
         }
       });
 
