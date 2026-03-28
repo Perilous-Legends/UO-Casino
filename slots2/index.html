@@ -43,6 +43,9 @@
   </script>
   <script src="assets/js/main.js"></script>
   <style>
+    /* Hide the Scatter entry in the paytable */
+    .smg-paytable-symbol:has(.smg-scatter-label) { display: none !important; }
+    .smg-paytable-symbol:has(img[src*="scatter"]) { display: none !important; }
     body {
       width: 100vw;
       height: 100vh;
