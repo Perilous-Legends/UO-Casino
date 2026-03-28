@@ -589,6 +589,15 @@
         }
       });
 
+      // Hide the scatter row - find scatter img, walk up to direct child of ptInner
+      ptInner.querySelectorAll('img').forEach(function(img) {
+        if (img.src && img.src.toLowerCase().includes('scatter')) {
+          var node = img;
+          while (node.parentElement && node.parentElement !== ptInner) node = node.parentElement;
+          if (node.parentElement === ptInner) node.style.setProperty('display','none','important');
+        }
+      });
+
       // Append the two bonus paytable images at the bottom with a debugger
       if (!document.getElementById('bonusWheelImages')) {
         const PT_IMG1 = { x: 0, y: 0, w: 320 };
