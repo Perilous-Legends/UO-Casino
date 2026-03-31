@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scratch Tickets - HoH Casino</title>
+  <title>Lucky Scratch - HoH Casino</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,236 +15,204 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 16px;
       user-select: none;
-    }
-
-    h1 {
-      font-size: 22px;
-      letter-spacing: 3px;
-      color: #c9a84c;
-      text-shadow: 0 0 12px #c9a84c88;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      font-size: 12px;
-      color: #888;
-      letter-spacing: 2px;
-      margin-bottom: 18px;
     }
 
     .hud {
       display: flex;
-      gap: 30px;
+      gap: 24px;
       align-items: center;
       background: rgba(0,0,0,0.6);
       border: 1px solid #c9a84c44;
       border-radius: 8px;
-      padding: 10px 24px;
-      margin-bottom: 18px;
-      font-size: 14px;
+      padding: 8px 20px;
+      margin-bottom: 12px;
+      font-size: 13px;
     }
-
-    .hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .hud-label { font-size: 10px; color: #888; letter-spacing: 1px; }
-    .hud-value { font-size: 18px; color: #ffd700; font-weight: bold; }
+    .hud-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .hud-label { font-size: 9px; color: #888; letter-spacing: 1px; }
+    .hud-value { font-size: 16px; color: #ffd700; font-weight: bold; }
     .hud-value.green { color: #00ff88; }
-    .hud-value.red { color: #ff4444; }
+    .hud-value.red   { color: #ff4444; }
 
-    /* Ticket container */
-    .ticket {
-      background: linear-gradient(135deg, #2a1500 0%, #1a0a00 50%, #2a1500 100%);
-      border: 3px solid #c9a84c;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 0 30px #c9a84c44, inset 0 0 20px rgba(0,0,0,0.5);
+    /* Ticket wrapper - sized to image */
+    #ticket-wrap {
       position: relative;
-      max-width: 420px;
-      width: 100%;
+      display: inline-block;
+      line-height: 0;
     }
 
-    .ticket-header {
-      text-align: center;
-      margin-bottom: 14px;
+    #bg-img {
+      display: block;
+      max-width: 100%;
+      max-height: 80vh;
+      width: auto;
+      height: auto;
     }
 
-    .ticket-title {
-      font-size: 16px;
-      letter-spacing: 4px;
-      color: #c9a84c;
+    /* Scratch cells overlay - absolute, covers image exactly */
+    #scratch-layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; /* cells handle their own events */
     }
 
-    .ticket-cost {
-      font-size: 11px;
-      color: #888;
-      margin-top: 2px;
-    }
-
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .cell {
-      position: relative;
-      aspect-ratio: 1 / 0.7;
-      border-radius: 8px;
+    /* Each scratch cell */
+    .scratch-cell {
+      position: absolute;
       overflow: hidden;
       cursor: crosshair;
-      border: 1px solid #c9a84c44;
+      pointer-events: all;
     }
 
-    .cell-prize {
+    .scratch-cell canvas {
       position: absolute;
-      inset: 0;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .cell-prize-display {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #0d0600;
-      font-size: 15px;
+      font-size: 12px;
       font-weight: bold;
-      gap: 2px;
-      transition: background 0.3s;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .cell-prize.winner {
-      background: #1a1200;
-      box-shadow: inset 0 0 12px #ffd70066;
-    }
-
-    .cell-prize .prize-label {
-      font-size: 9px;
-      color: #888;
-      letter-spacing: 1px;
-    }
-
-    .cell canvas {
+    /* DEBUG MODE */
+    .debug-box {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
+      border: 2px solid #00ff00;
+      background: rgba(0,255,0,0.15);
+      cursor: move;
+      pointer-events: all;
+      z-index: 100;
+    }
+    .debug-box.active-drag { border-color: #ffff00; background: rgba(255,255,0,0.2); }
+
+    .debug-label {
+      position: absolute;
+      top: 2px; left: 4px;
+      font-size: 9px;
+      color: #00ff00;
+      font-family: monospace;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
-    .cell.revealed canvas {
+    /* Resize handle - bottom-right corner */
+    .resize-handle {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 12px; height: 12px;
+      background: #00ff00;
+      cursor: nwse-resize;
+      pointer-events: all;
+    }
+
+    /* Debug panel */
+    #debug-panel {
+      position: fixed;
+      top: 8px; right: 8px;
+      width: 280px;
+      background: rgba(0,0,0,0.92);
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 10px;
+      color: #00ff00;
+      z-index: 200;
       display: none;
     }
 
-    /* Result banner */
-    .result-banner {
-      text-align: center;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 18px;
-      font-weight: bold;
+    #debug-panel h3 {
+      font-size: 11px;
+      color: #ffff00;
+      margin-bottom: 8px;
       letter-spacing: 2px;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
-      transition: all 0.4s;
     }
 
-    .result-banner.win {
-      background: rgba(0,255,100,0.15);
-      border: 1px solid #00ff88;
-      color: #00ff88;
-      text-shadow: 0 0 12px #00ff8888;
+    #debug-coords {
+      line-height: 1.8;
+      margin-bottom: 10px;
+      white-space: pre;
     }
 
-    .result-banner.lose {
-      background: rgba(255,50,50,0.1);
-      border: 1px solid #ff444488;
-      color: #ff6666;
+    .dbtn {
+      display: inline-block;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: bold;
+      margin: 2px;
     }
+    .dbtn-copy { background: #00ff00; color: #000; }
+    .dbtn-toggle { background: #ffff00; color: #000; }
+    .dbtn-done { background: #ff6600; color: #000; }
 
-    .result-banner.idle {
-      background: transparent;
-      border: 1px solid #c9a84c22;
-      color: #c9a84c66;
-      font-size: 12px;
-      letter-spacing: 3px;
-    }
-
-    /* Buttons */
-    .btn-row {
+    /* Bottom bar */
+    #bottom-bar {
+      margin-top: 12px;
       display: flex;
       gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
       justify-content: center;
     }
 
     .btn {
-      padding: 10px 24px;
+      padding: 10px 22px;
       border: none;
       border-radius: 8px;
       font-family: Georgia, serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       cursor: pointer;
       letter-spacing: 1px;
       transition: all 0.2s;
     }
+    .btn-buy    { background: linear-gradient(135deg,#c9a84c,#ffd700); color:#1a0a00; }
+    .btn-buy:hover { transform:scale(1.04); box-shadow:0 0 14px #ffd70066; }
+    .btn-buy:disabled { background:#444; color:#888; cursor:not-allowed; transform:none; }
+    .btn-reveal { background:rgba(255,255,255,0.08); color:#ffd700; border:1px solid #c9a84c44; }
+    .btn-reveal:disabled { opacity:0.3; cursor:not-allowed; }
+    .btn-debug  { background:rgba(0,255,0,0.15); color:#00ff00; border:1px solid #00ff0066; }
 
-    .btn-buy {
-      background: linear-gradient(135deg, #c9a84c, #ffd700);
-      color: #1a0a00;
+    .result-banner {
+      text-align:center; padding:8px 20px; border-radius:8px;
+      font-size:16px; font-weight:bold; letter-spacing:2px;
+      min-width: 220px;
     }
+    .result-banner.idle { border:1px solid #c9a84c22; color:#c9a84c66; font-size:11px; }
+    .result-banner.win  { background:rgba(0,255,100,0.15); border:1px solid #00ff88; color:#00ff88; }
+    .result-banner.lose { background:rgba(255,50,50,0.1);  border:1px solid #ff444488; color:#ff6666; }
 
-    .btn-buy:hover { transform: scale(1.04); box-shadow: 0 0 14px #ffd70066; }
-    .btn-buy:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
-
-    .btn-reveal {
-      background: rgba(255,255,255,0.08);
-      color: #ffd700;
-      border: 1px solid #c9a84c44;
-    }
-
-    .btn-reveal:hover { background: rgba(255,255,255,0.14); }
-    .btn-reveal:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* Win particles */
     @keyframes floatUp {
-      0%   { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
+      0%   { transform:translateY(0) scale(1); opacity:1; }
+      100% { transform:translateY(-80px) scale(1.4); opacity:0; }
     }
+    .particle { position:fixed; pointer-events:none; font-size:20px; animation:floatUp 1.2s ease-out forwards; z-index:999; }
 
-    .particle {
-      position: fixed;
-      pointer-events: none;
-      font-size: 20px;
-      animation: floatUp 1.2s ease-out forwards;
-      z-index: 999;
-    }
-
-    /* Win highlight pulse */
     @keyframes pulse {
-      0%,100% { box-shadow: inset 0 0 12px #ffd70066; }
-      50%      { box-shadow: inset 0 0 24px #ffd700cc; }
+      0%,100% { box-shadow: inset 0 0 10px #ffd70066; }
+      50%      { box-shadow: inset 0 0 22px #ffd700cc; }
     }
-    .cell-prize.winner.pulse { animation: pulse 0.8s ease-in-out infinite; }
-
-    .paytable {
-      margin-top: 16px;
-      font-size: 10px;
-      color: #888;
-      text-align: center;
-      line-height: 1.8;
-      letter-spacing: 1px;
-    }
-
-    .paytable span { color: #c9a84c; }
+    .winner-glow { animation: pulse 0.8s ease-in-out infinite; }
   </style>
 </head>
 <body>
-
-<h1>LUCKY SCRATCH</h1>
-<div class="subtitle">SCRATCH TO REVEAL YOUR PRIZES</div>
 
 <div class="hud">
   <div class="hud-item">
@@ -261,84 +229,239 @@
   </div>
 </div>
 
-<div class="ticket">
-  <div class="ticket-header">
-    <div class="ticket-title">⚜ HEROES OF HOLDEM ⚜</div>
-    <div class="ticket-cost">Match 3 identical prizes to win • Ticket: 500g</div>
-  </div>
+<div id="ticket-wrap">
+  <img id="bg-img" src="scratch-bg.png" draggable="false" />
+  <div id="scratch-layer"></div>
+</div>
 
-  <div class="grid" id="grid"></div>
-
+<div id="bottom-bar">
   <div class="result-banner idle" id="resultBanner">SCRATCH YOUR TICKET</div>
+  <button class="btn btn-reveal" id="revealAllBtn" onclick="revealAll()" disabled>Reveal All</button>
+  <button class="btn btn-buy" id="buyBtn" onclick="buyTicket()">Buy Ticket (500g)</button>
+  <button class="btn btn-debug" onclick="toggleDebug()">⬛ Debug</button>
+</div>
 
-  <div class="btn-row">
-    <button class="btn btn-reveal" id="revealAllBtn" onclick="revealAll()" disabled>Reveal All</button>
-    <button class="btn btn-buy" id="buyBtn" onclick="buyTicket()">Buy Ticket (500g)</button>
-  </div>
-
-  <div class="paytable">
-    Match 3 of: <span>100g</span> · <span>250g</span> · <span>500g</span> · <span>1,000g</span> ·
-    <span>2,500g</span> · <span>5,000g</span> · <span>10,000g</span> · <span>JACKPOT 50,000g</span>
-  </div>
+<!-- Debug panel -->
+<div id="debug-panel">
+  <h3>⬛ SCRATCH CELL DEBUGGER</h3>
+  <div id="debug-coords"></div>
+  <button class="dbtn dbtn-copy" onclick="copyCoords()">COPY</button>
+  <button class="dbtn dbtn-done" onclick="toggleDebug()">CLOSE</button>
+  <div style="margin-top:8px; color:#888; font-size:9px;">Drag boxes to position · Drag corner to resize</div>
 </div>
 
 <script>
+  // ── CONFIG ──────────────────────────────────────────────────────────────
   const ROWS = 4;
   const COLS = 3;
   const CELLS = ROWS * COLS; // 12
   const TICKET_COST = 500;
-  const SCRATCH_THRESHOLD = 0.45; // auto-reveal when 45% scratched
+  const SCRATCH_THRESHOLD = 0.45;
 
-  // Prize table: [value, label, weight, color]
-  const PRIZES = [
-    { value: 100,    label: '100g',       weight: 30, color: '#aaaaaa' },
-    { value: 250,    label: '250g',       weight: 25, color: '#cccccc' },
-    { value: 500,    label: '500g',       weight: 18, color: '#ffd700' },
-    { value: 1000,   label: '1,000g',     weight: 12, color: '#ffd700' },
-    { value: 2500,   label: '2,500g',     weight:  8, color: '#00ccff' },
-    { value: 5000,   label: '5,000g',     weight:  4, color: '#00ccff' },
-    { value: 10000,  label: '10,000g',    weight:  2, color: '#ff8800' },
-    { value: 50000,  label: 'JACKPOT',    weight:  1, color: '#ff0066' },
+  // Cell positions as % of image (x, y, w, h in 0-1 range relative to displayed image)
+  // These are DEFAULTS - use debug mode to dial in the real positions
+  // Laid out in a 4x3 grid roughly centered on the ticket background
+  const DEFAULT_CELLS = [
+    // Row 1
+    { x: 0.08, y: 0.30, w: 0.25, h: 0.12 },
+    { x: 0.38, y: 0.30, w: 0.25, h: 0.12 },
+    { x: 0.68, y: 0.30, w: 0.25, h: 0.12 },
+    // Row 2
+    { x: 0.08, y: 0.45, w: 0.25, h: 0.12 },
+    { x: 0.38, y: 0.45, w: 0.25, h: 0.12 },
+    { x: 0.68, y: 0.45, w: 0.25, h: 0.12 },
+    // Row 3
+    { x: 0.08, y: 0.60, w: 0.25, h: 0.12 },
+    { x: 0.38, y: 0.60, w: 0.25, h: 0.12 },
+    { x: 0.68, y: 0.60, w: 0.25, h: 0.12 },
+    // Row 4
+    { x: 0.08, y: 0.75, w: 0.25, h: 0.12 },
+    { x: 0.38, y: 0.75, w: 0.25, h: 0.12 },
+    { x: 0.68, y: 0.75, w: 0.25, h: 0.12 },
   ];
 
-  // House edge: guarantee win rate ~30%, average payout ~0.85x
-  // One guaranteed matching triple per ~3.3 tickets on average
+  // Saved positions (populated from debug or defaults)
+  let cellDefs = DEFAULT_CELLS.map(c => ({ ...c }));
+
+  const PRIZES = [
+    { value: 100,   label: '100g',    weight: 30, color: '#aaaaaa' },
+    { value: 250,   label: '250g',    weight: 25, color: '#cccccc' },
+    { value: 500,   label: '500g',    weight: 18, color: '#ffd700' },
+    { value: 1000,  label: '1,000g',  weight: 12, color: '#ffd700' },
+    { value: 2500,  label: '2,500g',  weight:  8, color: '#00ccff' },
+    { value: 5000,  label: '5,000g',  weight:  4, color: '#00ccff' },
+    { value: 10000, label: '10,000g', weight:  2, color: '#ff8800' },
+    { value: 50000, label: 'JACKPOT', weight:  1, color: '#ff0066' },
+  ];
 
   let balance = 100000;
   let ticketActive = false;
   let ticketValues = [];
   let cellRevealed = [];
-  let allRevealed = false;
   let isScratching = false;
-  let activeCellIndex = -1;
+  let activeCellIdx = -1;
+  let debugMode = false;
 
-  function fmt(n) {
-    return n.toLocaleString() + 'g';
+  // ── DEBUG DRAG ────────────────────────────────────────────────────────
+  let dragState = null; // { idx, type:'move'|'resize', startX, startY, origX, origY, origW, origH }
+
+  function imgRect() {
+    return document.getElementById('bg-img').getBoundingClientRect();
   }
 
-  function updateHUD() {
-    document.getElementById('balanceDisplay').textContent = fmt(balance);
+  function buildDebugBoxes() {
+    const layer = document.getElementById('scratch-layer');
+    // Remove existing debug boxes
+    layer.querySelectorAll('.debug-box').forEach(e => e.remove());
+
+    const r = imgRect();
+
+    cellDefs.forEach((def, i) => {
+      const box = document.createElement('div');
+      box.className = 'debug-box';
+      box.id = `dbox-${i}`;
+      positionDebugBox(box, def, r);
+
+      const label = document.createElement('div');
+      label.className = 'debug-label';
+      label.id = `dlabel-${i}`;
+      label.textContent = `#${i+1}`;
+      box.appendChild(label);
+
+      const handle = document.createElement('div');
+      handle.className = 'resize-handle';
+      handle.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const r2 = imgRect();
+        dragState = { idx: i, type: 'resize',
+          startX: e.clientX, startY: e.clientY,
+          origW: def.w, origH: def.h };
+      });
+      handle.addEventListener('touchstart', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        const t = e.touches[0];
+        dragState = { idx: i, type: 'resize',
+          startX: t.clientX, startY: t.clientY,
+          origW: def.w, origH: def.h };
+      }, { passive: false });
+      box.appendChild(handle);
+
+      box.addEventListener('mousedown', (e) => {
+        if (e.target === handle) return;
+        e.preventDefault();
+        const r2 = imgRect();
+        dragState = { idx: i, type: 'move',
+          startX: e.clientX, startY: e.clientY,
+          origX: def.x, origY: def.y };
+      });
+      box.addEventListener('touchstart', (e) => {
+        if (e.target === handle) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        dragState = { idx: i, type: 'move',
+          startX: t.clientX, startY: t.clientY,
+          origX: def.x, origY: def.y };
+      }, { passive: false });
+
+      layer.appendChild(box);
+    });
+
+    updateDebugCoords();
   }
+
+  function positionDebugBox(box, def, r) {
+    box.style.left   = (def.x * r.width)  + 'px';
+    box.style.top    = (def.y * r.height) + 'px';
+    box.style.width  = (def.w * r.width)  + 'px';
+    box.style.height = (def.h * r.height) + 'px';
+  }
+
+  function onDragMove(clientX, clientY) {
+    if (!dragState || !debugMode) return;
+    const r = imgRect();
+    const { idx, type, startX, startY } = dragState;
+    const def = cellDefs[idx];
+    const dx = (clientX - startX) / r.width;
+    const dy = (clientY - startY) / r.height;
+
+    if (type === 'move') {
+      def.x = Math.max(0, Math.min(1 - def.w, dragState.origX + dx));
+      def.y = Math.max(0, Math.min(1 - def.h, dragState.origY + dy));
+    } else {
+      def.w = Math.max(0.03, dragState.origW + dx);
+      def.h = Math.max(0.02, dragState.origH + dy);
+    }
+
+    const box = document.getElementById(`dbox-${idx}`);
+    positionDebugBox(box, def, r);
+    updateDebugCoords();
+  }
+
+  document.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
+  document.addEventListener('touchmove', (e) => {
+    if (dragState) { e.preventDefault(); onDragMove(e.touches[0].clientX, e.touches[0].clientY); }
+  }, { passive: false });
+  document.addEventListener('mouseup',   () => { dragState = null; });
+  document.addEventListener('touchend',  () => { dragState = null; });
+
+  function updateDebugCoords() {
+    const lines = cellDefs.map((d, i) =>
+      `#${String(i+1).padStart(2)}: x:${d.x.toFixed(3)} y:${d.y.toFixed(3)} w:${d.w.toFixed(3)} h:${d.h.toFixed(3)}`
+    );
+    document.getElementById('debug-coords').textContent = lines.join('\n');
+  }
+
+  function copyCoords() {
+    const obj = cellDefs.map((d, i) => ({
+      cell: i + 1,
+      x: parseFloat(d.x.toFixed(4)),
+      y: parseFloat(d.y.toFixed(4)),
+      w: parseFloat(d.w.toFixed(4)),
+      h: parseFloat(d.h.toFixed(4))
+    }));
+    navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => {
+      const btn = document.querySelector('.dbtn-copy');
+      btn.textContent = 'COPIED!';
+      setTimeout(() => btn.textContent = 'COPY', 1500);
+    });
+  }
+
+  function toggleDebug() {
+    debugMode = !debugMode;
+    const panel = document.getElementById('debug-panel');
+    const layer = document.getElementById('scratch-layer');
+
+    panel.style.display = debugMode ? 'block' : 'none';
+
+    if (debugMode) {
+      // Hide scratch cells, show debug boxes
+      layer.querySelectorAll('.scratch-cell').forEach(e => e.style.display = 'none');
+      buildDebugBoxes();
+    } else {
+      // Hide debug boxes, show scratch cells
+      layer.querySelectorAll('.debug-box').forEach(e => e.remove());
+      layer.querySelectorAll('.scratch-cell').forEach(e => e.style.display = '');
+      rebuildScratchCells();
+    }
+  }
+
+  // ── PRIZE LOGIC ────────────────────────────────────────────────────────
+  function fmt(n) { return n.toLocaleString() + 'g'; }
+  function updateHUD() { document.getElementById('balanceDisplay').textContent = fmt(balance); }
 
   function weightedRandom() {
     const total = PRIZES.reduce((s, p) => s + p.weight, 0);
     let r = Math.random() * total;
-    for (const p of PRIZES) {
-      r -= p.weight;
-      if (r <= 0) return p;
-    }
+    for (const p of PRIZES) { r -= p.weight; if (r <= 0) return p; }
     return PRIZES[0];
   }
 
   function generateTicket() {
-    // ~30% chance: force a winning triple
     const hasWin = Math.random() < 0.30;
     const values = [];
-
     if (hasWin) {
-      // Pick a winning prize (weighted toward lower values)
       const winPrize = weightedRandom();
-      // Place 3 copies at random positions
       const positions = [];
       while (positions.length < 3) {
         const p = Math.floor(Math.random() * CELLS);
@@ -348,236 +471,161 @@
         if (positions.includes(i)) {
           values.push(winPrize);
         } else {
-          // Fill rest - avoid accidentally creating another triple
-          let pick;
-          let attempts = 0;
-          do {
-            pick = weightedRandom();
-            attempts++;
-          } while (attempts < 10 && pick.value === winPrize.value);
+          let pick, attempts = 0;
+          do { pick = weightedRandom(); attempts++; }
+          while (attempts < 10 && pick.value === winPrize.value);
           values.push(pick);
         }
       }
     } else {
-      // Losing ticket - no triple (allow pairs)
-      for (let i = 0; i < CELLS; i++) {
-        values.push(weightedRandom());
-      }
-      // Verify no triple sneaked in; if so, swap one
+      for (let i = 0; i < CELLS; i++) values.push(weightedRandom());
       const counts = {};
       for (const v of values) counts[v.value] = (counts[v.value] || 0) + 1;
       for (const [val, cnt] of Object.entries(counts)) {
         if (cnt >= 3) {
-          // Find a different prize not forming a triple and replace one instance
           for (let i = 0; i < values.length; i++) {
             if (values[i].value == val) {
-              let replacement;
-              do { replacement = weightedRandom(); } while (replacement.value == val);
-              values[i] = replacement;
-              break;
+              let rep; do { rep = weightedRandom(); } while (rep.value == val);
+              values[i] = rep; break;
             }
           }
         }
       }
     }
-
     return values;
   }
 
   function findWins(values) {
     const counts = {};
-    for (const v of values) {
-      counts[v.value] = (counts[v.value] || 0) + 1;
-    }
-    const winners = [];
-    for (const [val, cnt] of Object.entries(counts)) {
-      if (cnt >= 3) winners.push(parseInt(val));
-    }
-    return winners;
+    for (const v of values) counts[v.value] = (counts[v.value] || 0) + 1;
+    return Object.entries(counts).filter(([,c]) => c >= 3).map(([v]) => parseInt(v));
   }
 
-  function buildGrid() {
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
+  // ── SCRATCH CELLS ─────────────────────────────────────────────────────
+  function rebuildScratchCells() {
+    const layer = document.getElementById('scratch-layer');
+    layer.querySelectorAll('.scratch-cell').forEach(e => e.remove());
+    if (!ticketActive) return;
 
-    for (let i = 0; i < CELLS; i++) {
-      const prize = ticketValues[i];
+    const r = imgRect();
+
+    cellDefs.forEach((def, i) => {
       const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.id = `cell-${i}`;
+      cell.className = 'scratch-cell';
+      cell.id = `scell-${i}`;
+      cell.style.left   = (def.x * r.width)  + 'px';
+      cell.style.top    = (def.y * r.height) + 'px';
+      cell.style.width  = (def.w * r.width)  + 'px';
+      cell.style.height = (def.h * r.height) + 'px';
 
-      // Prize layer (behind scratch)
+      const prize = ticketValues[i];
+
+      // Prize display (under scratch layer)
       const prizeDiv = document.createElement('div');
-      prizeDiv.className = 'cell-prize';
-      prizeDiv.id = `prize-${i}`;
-      prizeDiv.innerHTML = `
-        <div style="color:${prize.color}; font-size:16px; font-weight:bold;">${prize.label}</div>
-        <div class="prize-label">PRIZE</div>
-      `;
+      prizeDiv.className = 'cell-prize-display';
+      prizeDiv.id = `cprize-${i}`;
+      prizeDiv.style.color = prize.color;
+      prizeDiv.innerHTML = `<span style="font-size:110%;font-weight:bold">${prize.label}</span>`;
       cell.appendChild(prizeDiv);
 
       // Scratch canvas
       const canvas = document.createElement('canvas');
+      canvas.id = `ccanvas-${i}`;
       cell.appendChild(canvas);
-      initScratchCanvas(canvas, i);
 
-      grid.appendChild(cell);
-    }
-  }
+      layer.appendChild(cell);
 
-  function initScratchCanvas(canvas, cellIndex) {
-    // Size canvas to match cell after layout
-    requestAnimationFrame(() => {
-      const cell = document.getElementById(`cell-${cellIndex}`);
-      const w = cell.offsetWidth;
-      const h = cell.offsetHeight;
-      canvas.width = w;
-      canvas.height = h;
-
-      const ctx = canvas.getContext('2d');
-      // Scratch layer - dark gold with texture
-      ctx.fillStyle = '#3a2800';
-      ctx.fillRect(0, 0, w, h);
-
-      // Add a subtle pattern
-      ctx.fillStyle = 'rgba(201,168,76,0.15)';
-      for (let y = 0; y < h; y += 6) {
-        for (let x = (y % 12 === 0 ? 0 : 3); x < w; x += 6) {
-          ctx.fillRect(x, y, 2, 2);
-        }
-      }
-
-      // Label
-      ctx.fillStyle = 'rgba(201,168,76,0.6)';
-      ctx.font = `bold ${Math.floor(h * 0.2)}px Georgia`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SCRATCH', w / 2, h / 2);
-
-      canvas._scratched = 0;
-      canvas._totalPixels = w * h;
-
-      // Events
-      canvas.addEventListener('mousedown', (e) => startScratch(e, cellIndex));
-      canvas.addEventListener('mousemove', (e) => doScratch(e, cellIndex));
-      canvas.addEventListener('mouseup', () => { isScratching = false; activeCellIndex = -1; });
-      canvas.addEventListener('mouseleave', () => { isScratching = false; activeCellIndex = -1; });
-
-      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startScratch(e.touches[0], cellIndex); }, { passive: false });
-      canvas.addEventListener('touchmove', (e) => { e.preventDefault(); doScratch(e.touches[0], cellIndex); }, { passive: false });
-      canvas.addEventListener('touchend', () => { isScratching = false; activeCellIndex = -1; });
+      initCanvas(canvas, def, r, i);
     });
   }
 
-  function getCanvasPos(e, canvas) {
+  function initCanvas(canvas, def, r, i) {
+    const w = Math.round(def.w * r.width);
+    const h = Math.round(def.h * r.height);
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.style.width  = '100%';
+    canvas.style.height = '100%';
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#3a2800';
+    ctx.fillRect(0, 0, w, h);
+    // Dot texture
+    ctx.fillStyle = 'rgba(201,168,76,0.18)';
+    for (let y = 0; y < h; y += 5) {
+      for (let x = (y % 10 === 0 ? 0 : 3); x < w; x += 5) ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.fillStyle = 'rgba(201,168,76,0.55)';
+    ctx.font = `bold ${Math.max(8, Math.floor(h * 0.22))}px Georgia`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SCRATCH', w / 2, h / 2);
+
+    canvas.addEventListener('mousedown', (e) => { if (!ticketActive || cellRevealed[i]) return; isScratching = true; activeCellIdx = i; scratch(e, canvas, i); });
+    canvas.addEventListener('mousemove', (e) => { if (!isScratching || activeCellIdx !== i || !ticketActive || cellRevealed[i]) return; scratch(e, canvas, i); });
+    canvas.addEventListener('mouseup',   () => { isScratching = false; activeCellIdx = -1; });
+    canvas.addEventListener('mouseleave',() => { isScratching = false; activeCellIdx = -1; });
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (!ticketActive || cellRevealed[i]) return; isScratching = true; activeCellIdx = i; scratch(e.touches[0], canvas, i); }, { passive: false });
+    canvas.addEventListener('touchmove',  (e) => { e.preventDefault(); if (!isScratching || activeCellIdx !== i || !ticketActive || cellRevealed[i]) return; scratch(e.touches[0], canvas, i); }, { passive: false });
+    canvas.addEventListener('touchend',   () => { isScratching = false; activeCellIdx = -1; });
+  }
+
+  function scratch(e, canvas, i) {
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left) * (canvas.width / rect.width),
-      y: (e.clientY - rect.top) * (canvas.height / rect.height)
-    };
-  }
-
-  function startScratch(e, cellIndex) {
-    if (!ticketActive || cellRevealed[cellIndex]) return;
-    isScratching = true;
-    activeCellIndex = cellIndex;
-    const canvas = document.querySelector(`#cell-${cellIndex} canvas`);
-    if (!canvas) return;
-    const pos = getCanvasPos(e, canvas);
-    scratchAt(canvas, pos.x, pos.y, cellIndex);
-  }
-
-  function doScratch(e, cellIndex) {
-    if (!isScratching || activeCellIndex !== cellIndex) return;
-    if (!ticketActive || cellRevealed[cellIndex]) return;
-    const canvas = document.querySelector(`#cell-${cellIndex} canvas`);
-    if (!canvas) return;
-    const pos = getCanvasPos(e, canvas);
-    scratchAt(canvas, pos.x, pos.y, cellIndex);
-  }
-
-  function scratchAt(canvas, x, y, cellIndex) {
+    const sx = (e.clientX - rect.left) * (canvas.width  / rect.width);
+    const sy = (e.clientY - rect.top)  * (canvas.height / rect.height);
     const ctx = canvas.getContext('2d');
-    const radius = Math.max(canvas.width, canvas.height) * 0.18;
-
+    const r = Math.max(canvas.width, canvas.height) * 0.22;
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
-
-    // Check coverage
-    checkCoverage(canvas, cellIndex);
+    checkCoverage(canvas, i);
   }
 
-  function checkCoverage(canvas, cellIndex) {
-    if (cellRevealed[cellIndex]) return;
-    const ctx = canvas.getContext('2d');
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  function checkCoverage(canvas, i) {
+    if (cellRevealed[i]) return;
+    const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
     let transparent = 0;
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] < 128) transparent++;
-    }
-    const ratio = transparent / (canvas.width * canvas.height);
-    if (ratio >= SCRATCH_THRESHOLD) {
-      revealCell(cellIndex);
-    }
+    for (let j = 3; j < data.length; j += 4) if (data[j] < 128) transparent++;
+    if (transparent / (canvas.width * canvas.height) >= SCRATCH_THRESHOLD) revealCell(i);
   }
 
-  function revealCell(cellIndex) {
-    if (cellRevealed[cellIndex]) return;
-    cellRevealed[cellIndex] = true;
-
-    const cell = document.getElementById(`cell-${cellIndex}`);
-    cell.classList.add('revealed');
-
-    // Check if all done
-    if (cellRevealed.every(r => r)) {
-      finishTicket();
-    }
+  function revealCell(i) {
+    if (cellRevealed[i]) return;
+    cellRevealed[i] = true;
+    const cell = document.getElementById(`scell-${i}`);
+    if (cell) { const c = cell.querySelector('canvas'); if (c) c.style.display = 'none'; }
+    if (cellRevealed.every(r => r)) finishTicket();
   }
 
   function revealAll() {
     if (!ticketActive) return;
-    for (let i = 0; i < CELLS; i++) {
-      revealCell(i);
-    }
+    for (let i = 0; i < CELLS; i++) revealCell(i);
   }
 
   function finishTicket() {
-    allRevealed = true;
     ticketActive = false;
     document.getElementById('revealAllBtn').disabled = true;
 
     const wins = findWins(ticketValues);
     const totalWin = wins.reduce((s, v) => s + v, 0);
 
-    // Highlight winning cells
     if (wins.length > 0) {
       for (let i = 0; i < CELLS; i++) {
         if (wins.includes(ticketValues[i].value)) {
-          const prizeDiv = document.getElementById(`prize-${i}`);
-          prizeDiv.classList.add('winner', 'pulse');
+          const prizeDiv = document.getElementById(`cprize-${i}`);
+          if (prizeDiv) prizeDiv.classList.add('winner-glow');
         }
       }
-
       balance += totalWin;
       updateHUD();
       document.getElementById('lastWinDisplay').textContent = fmt(totalWin);
       document.getElementById('lastWinDisplay').className = 'hud-value green';
-
       const banner = document.getElementById('resultBanner');
       banner.className = 'result-banner win';
-      if (totalWin >= 50000) {
-        banner.textContent = `🎰 JACKPOT! YOU WIN ${fmt(totalWin)}! 🎰`;
-        spawnParticles('💰', 20);
-      } else if (totalWin >= 5000) {
-        banner.textContent = `🏆 BIG WIN! +${fmt(totalWin)}`;
-        spawnParticles('⭐', 12);
-      } else {
-        banner.textContent = `✨ WINNER! +${fmt(totalWin)}`;
-        spawnParticles('✨', 8);
-      }
+      if (totalWin >= 50000)     { banner.textContent = `🎰 JACKPOT! +${fmt(totalWin)}!`; spawnParticles('💰', 20); }
+      else if (totalWin >= 5000) { banner.textContent = `🏆 BIG WIN! +${fmt(totalWin)}`;  spawnParticles('⭐', 12); }
+      else                       { banner.textContent = `✨ WINNER! +${fmt(totalWin)}`;    spawnParticles('✨', 8); }
     } else {
       const banner = document.getElementById('resultBanner');
       banner.className = 'result-banner lose';
@@ -585,7 +633,6 @@
       document.getElementById('lastWinDisplay').textContent = '---';
       document.getElementById('lastWinDisplay').className = 'hud-value red';
     }
-
     document.getElementById('buyBtn').disabled = balance < TICKET_COST;
   }
 
@@ -593,30 +640,26 @@
     if (balance < TICKET_COST) return;
     balance -= TICKET_COST;
     updateHUD();
-
     ticketValues = generateTicket();
     cellRevealed = new Array(CELLS).fill(false);
-    allRevealed = false;
     ticketActive = true;
-
     document.getElementById('resultBanner').className = 'result-banner idle';
     document.getElementById('resultBanner').textContent = 'SCRATCH YOUR TICKET';
     document.getElementById('revealAllBtn').disabled = false;
     document.getElementById('buyBtn').disabled = false;
-
-    buildGrid();
+    if (!debugMode) rebuildScratchCells();
   }
 
   function spawnParticles(emoji, count) {
-    const ticket = document.querySelector('.ticket');
-    const rect = ticket.getBoundingClientRect();
+    const wrap = document.getElementById('ticket-wrap');
+    const r = wrap.getBoundingClientRect();
     for (let i = 0; i < count; i++) {
       setTimeout(() => {
         const p = document.createElement('div');
         p.className = 'particle';
         p.textContent = emoji;
-        p.style.left = (rect.left + Math.random() * rect.width) + 'px';
-        p.style.top = (rect.top + Math.random() * rect.height * 0.5 + rect.height * 0.3) + 'px';
+        p.style.left = (r.left + Math.random() * r.width) + 'px';
+        p.style.top  = (r.top  + Math.random() * r.height * 0.6 + r.height * 0.2) + 'px';
         p.style.animationDelay = (Math.random() * 0.4) + 's';
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 2000);
@@ -624,7 +667,14 @@
     }
   }
 
-  // Auto-buy on load
+  // Reposition cells on resize
+  window.addEventListener('resize', () => {
+    if (debugMode) buildDebugBoxes();
+    else rebuildScratchCells();
+  });
+
+  // Init
+  updateHUD();
   buyTicket();
 </script>
 </body>
