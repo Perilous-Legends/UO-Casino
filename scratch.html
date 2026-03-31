@@ -546,9 +546,8 @@
       prizeDiv.style.color = prize.color;
       const payout = Math.floor(buyin * prize.pct / 100);
       prizeDiv.innerHTML = `
-        <img src="${prize.img}" style="width:55%;height:auto;max-height:60%;object-fit:contain;image-rendering:pixelated;" draggable="false"/>
-        <span style="font-size:85%;font-weight:bold;margin-top:2px;">${prize.label}</span>
-        <span style="font-size:72%;color:#aaa;">${payout.toLocaleString()}g</span>
+        <span style="font-size:220%;font-weight:bold;line-height:1;color:${prize.color};text-shadow:0 0 10px ${prize.color}88;">${prize.label}</span>
+        <span style="font-size:85%;color:#aaa;margin-top:4px;">${payout.toLocaleString()}g</span>
       `;
       cell.appendChild(prizeDiv);
 
@@ -601,7 +600,7 @@
     const sx = (e.clientX - rect.left) * (canvas.width  / rect.width);
     const sy = (e.clientY - rect.top)  * (canvas.height / rect.height);
     const ctx = canvas.getContext('2d');
-    const brushSize = Math.max(canvas.width, canvas.height) * 0.44;
+    const brushSize = Math.max(canvas.width, canvas.height) * 0.33;
     ctx.globalCompositeOperation = 'destination-out';
     if (brushImg.complete && brushImg.naturalWidth > 0) {
       ctx.drawImage(brushImg, sx - brushSize / 2, sy - brushSize / 2, brushSize, brushSize);
