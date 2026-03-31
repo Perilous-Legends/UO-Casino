@@ -520,7 +520,8 @@
   }
 
   // ── SCRATCH CELLS ─────────────────────────────────────────────────────
-  function rebuildScratchCells() {
+  async function rebuildScratchCells() {
+    await coverReady;
     const layer = document.getElementById('scratch-layer');
     layer.querySelectorAll('.scratch-cell').forEach(e => e.remove());
     if (!ticketActive) return;
@@ -562,8 +563,12 @@
     });
   }
 
-  // Preload the cover image once
+  // Preload the cover image once - cells won't build until it's ready
   const coverImg = new Image();
+  const coverReady = new Promise(resolve => {
+    coverImg.onload = resolve;
+    coverImg.onerror = resolve; // fail gracefully
+  });
   coverImg.src = 'scratch-cover.png';
 
   function initCanvas(canvas, def, r, i) {
@@ -575,17 +580,8 @@
     canvas.style.height = '100%';
 
     const ctx = canvas.getContext('2d');
-
-    function drawCover() {
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(coverImg, 0, 0, w, h);
-    }
-
-    if (coverImg.complete) {
-      drawCover();
-    } else {
-      coverImg.onload = drawCover;
-    }
+    // coverImg is guaranteed loaded before initCanvas is ever called
+    ctx.drawImage(coverImg, 0, 0, w, h);
 
     canvas.addEventListener('mousedown', (e) => { if (!ticketActive || cellRevealed[i]) return; isScratching = true; activeCellIdx = i; scratch(e, canvas, i); });
     canvas.addEventListener('mousemove', (e) => { if (!isScratching || activeCellIdx !== i || !ticketActive || cellRevealed[i]) return; scratch(e, canvas, i); });
@@ -697,9 +693,16 @@
     else rebuildScratchCells();
   });
 
-  // Init
-  updateHUD();
-  buyTicket();
+  // Init - wait for both bg image and cover before starting
+  const bgImg2 = document.getElementById('bg-img');
+  const bgReady = bgImg2.complete
+    ? Promise.resolve()
+    : new Promise(r => { bgImg2.onload = r; bgImg2.onerror = r; });
+
+  Promise.all([bgReady, coverReady]).then(() => {
+    updateHUD();
+    buyTicket();
+  });
 </script>
 </body>
 </html>
