@@ -63,7 +63,7 @@
     .scratch-cell {
       position: absolute;
       overflow: hidden;
-      cursor: crosshair;
+      cursor: url('scratch-cursor-64.png') 32 32, crosshair;
       pointer-events: all;
     }
 
@@ -592,14 +592,22 @@
     canvas.addEventListener('touchend',   () => { isScratching = false; activeCellIdx = -1; });
   }
 
+  // Preload cursor image for use as scratch brush
+  const brushImg = new Image();
+  brushImg.src = 'scratch-cursor-64.png';
+
   function scratch(e, canvas, i) {
     const rect = canvas.getBoundingClientRect();
     const sx = (e.clientX - rect.left) * (canvas.width  / rect.width);
     const sy = (e.clientY - rect.top)  * (canvas.height / rect.height);
     const ctx = canvas.getContext('2d');
-    const r = Math.max(canvas.width, canvas.height) * 0.22;
+    const brushSize = Math.max(canvas.width, canvas.height) * 0.44;
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
+    if (brushImg.complete && brushImg.naturalWidth > 0) {
+      ctx.drawImage(brushImg, sx - brushSize / 2, sy - brushSize / 2, brushSize, brushSize);
+    } else {
+      ctx.beginPath(); ctx.arc(sx, sy, brushSize / 2, 0, Math.PI * 2); ctx.fill();
+    }
     ctx.globalCompositeOperation = 'source-over';
     checkCoverage(canvas, i);
   }
