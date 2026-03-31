@@ -232,7 +232,7 @@
 </div>
 
 <div id="ticket-wrap">
-  <img id="bg-img" src="scratch-bg.png" draggable="false" />
+  <img id="bg-img" src="scratch-bg2.png" draggable="false" />
   <div id="scratch-layer"></div>
 </div>
 
@@ -562,6 +562,10 @@
     });
   }
 
+  // Preload the cover image once
+  const coverImg = new Image();
+  coverImg.src = 'scratch-cover.png';
+
   function initCanvas(canvas, def, r, i) {
     const w = Math.round(def.w * r.width);
     const h = Math.round(def.h * r.height);
@@ -572,17 +576,16 @@
 
     const ctx = canvas.getContext('2d');
 
-    // Paint the corresponding slice of the background image onto the canvas
-    // so the scratch layer is pixel-perfect with the gold tile underneath
-    const bgImg = document.getElementById('bg-img');
-    // Source coords in the original image (natural size)
-    const scaleX = bgImg.naturalWidth  / r.width;
-    const scaleY = bgImg.naturalHeight / r.height;
-    const sx = def.x * r.width  * scaleX;
-    const sy = def.y * r.height * scaleY;
-    const sw = w * scaleX;
-    const sh = h * scaleY;
-    ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, w, h);
+    function drawCover() {
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(coverImg, 0, 0, w, h);
+    }
+
+    if (coverImg.complete) {
+      drawCover();
+    } else {
+      coverImg.onload = drawCover;
+    }
 
     canvas.addEventListener('mousedown', (e) => { if (!ticketActive || cellRevealed[i]) return; isScratching = true; activeCellIdx = i; scratch(e, canvas, i); });
     canvas.addEventListener('mousemove', (e) => { if (!isScratching || activeCellIdx !== i || !ticketActive || cellRevealed[i]) return; scratch(e, canvas, i); });
