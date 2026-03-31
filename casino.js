@@ -84,8 +84,8 @@ const ZONES = [
   {
     id: 'slots',
     label: 'Slots',
-    x: 212, y: 664,
-    w: 80, h: 60,
+    x: 203, y: 643,
+    w: 59, h: 108,
     type: 'game',
     url: './slots2/'
   },
