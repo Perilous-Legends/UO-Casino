@@ -62,11 +62,11 @@ const ZONES = [
     type: 'game',
     url: './uth-test.html'
   },
-  // Dragon's Lair slot machine - upper-center
+  // Dragon's Lair slot machine - lower-right
   {
     id: 'kong',
     label: "Dragon's Lair",
-    x: 440, y: 314,
+    x: 673, y: 654,
     w: 51, h: 96,
     type: 'game',
     url: './kong.html'
@@ -80,11 +80,11 @@ const ZONES = [
     type: 'game',
     url: './craps.html'
   },
-  // Slots - needs placement on new background
+  // Slots - lower-left
   {
     id: 'slots',
     label: 'Slots',
-    x: 450, y: 700,
+    x: 212, y: 664,
     w: 80, h: 60,
     type: 'game',
     url: './slots2/'
@@ -720,7 +720,7 @@ class CasinoScene extends Phaser.Scene {
   createDebugPanel() {
     const panelW = 320;
     const panelH = 420;
-    const panelX = 8;
+    const panelX = VIEW_W - panelW - 8;
     const panelY = VIEW_H - panelH - 8;
 
     // Panel background
