@@ -759,6 +759,63 @@ class CasinoScene extends Phaser.Scene {
     this.debugPanelText.setText(lines.join('\n'));
   }
 
+  toggleCandleDebug() {
+    this._candleDebug = !this._candleDebug;
+    const on = this._candleDebug;
+
+    // Show/hide labels
+    for (let i = 0; i < this.candles.length; i++) {
+      const c = this.candles[i];
+      const lbl = this.candleLabels[i];
+      if (on) {
+        c.setInteractive({ draggable: true, cursor: 'move' });
+        this.input.setDraggable(c, true);
+        lbl.setText(`#${i} (${Math.round(c.x)},${Math.round(c.y)})`);
+        lbl.setVisible(true);
+      } else {
+        c.disableInteractive();
+        lbl.setVisible(false);
+      }
+    }
+
+    if (on) {
+      // Drag events
+      this.input.on('dragstart', (ptr, obj) => {
+        if (obj.candleIndex === undefined) return;
+      });
+      this.input.on('drag', (ptr, obj, dx, dy) => {
+        if (obj.candleIndex === undefined) return;
+        obj.x = dx; obj.y = dy;
+        const lbl = this.candleLabels[obj.candleIndex];
+        lbl.setPosition(dx, dy - 30);
+        lbl.setText(`#${obj.candleIndex} (${Math.round(dx)},${Math.round(dy)})`);
+        CANDLE_POSITIONS[obj.candleIndex].x = Math.round(dx);
+        CANDLE_POSITIONS[obj.candleIndex].y = Math.round(dy);
+      });
+      // Show copy button in DOM
+      let hud = document.getElementById('candle-debug-hud');
+      if (!hud) {
+        hud = document.createElement('div');
+        hud.id = 'candle-debug-hud';
+        hud.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:1px solid #ffaa0088;border-radius:8px;padding:10px 18px;color:#ffaa00;font-size:13px;z-index:9999;font-family:monospace;display:flex;gap:12px;align-items:center;';
+        hud.innerHTML = '<span>Drag candles to reposition (C to exit)</span><button onclick="window._copyCandleCoords()" style="background:#ffaa00;color:#000;border:none;border-radius:5px;padding:3px 12px;font-weight:bold;cursor:pointer;">COPY</button>';
+        document.body.appendChild(hud);
+        window._copyCandleCoords = () => {
+          const lines = CANDLE_POSITIONS.map((p,i) => `  { x: ${p.x}, y: ${p.y}, scale: ${p.scale} },  // candle ${i}`).join('\n');
+          navigator.clipboard.writeText(lines).catch(()=>{});
+          hud.querySelector('button').textContent = 'COPIED!';
+          setTimeout(() => hud.querySelector('button').textContent = 'COPY', 1500);
+        };
+      }
+      hud.style.display = 'flex';
+    } else {
+      this.input.off('drag');
+      this.input.off('dragstart');
+      const hud = document.getElementById('candle-debug-hud');
+      if (hud) hud.style.display = 'none';
+    }
+  }
+
   toggleDebug() {
     debugMode = !debugMode;
     for (const rect of this.debugGraphics) {
@@ -828,6 +885,9 @@ class CasinoScene extends Phaser.Scene {
     this.escKey = this.input.keyboard.addKey('ESC');
     this.eKey = this.input.keyboard.addKey('E');
     this.dKey = this.input.keyboard.addKey('D');
+    this.cKey = this.input.keyboard.addKey('C');
+    this._candleDebug = false;
+    this._candleDrag  = null;
 
     // Right-click to move; hold and drag to continuously update direction
     // In debug mode: right-click drag pans the camera
@@ -972,6 +1032,10 @@ class CasinoScene extends Phaser.Scene {
     // D key to toggle debug overlay
     if (Phaser.Input.Keyboard.JustDown(this.dKey)) {
       this.toggleDebug();
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.cKey)) {
+      this.toggleCandleDebug();
     }
 
     // E key to interact with nearby zone
