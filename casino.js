@@ -55,7 +55,11 @@ const ZONES = [
   { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html', placeholder: true },
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
-  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/' },
+  // Slots — same situation as Multiplayer Holdem: the obfuscated 3rd-
+  // party slot lib (slots2/) ignores our bridge hooks and runs in its
+  // own 1M demo balance. coming_soon until we build an in-house slots
+  // implementation that wires through PL.wager/PL.settle.
+  { id: 'slots',     label: 'Slots (Coming Soon)',  x: 203, y: 643, w:  59, h: 108, type: 'coming_soon' },
   { id: 'scratch',   label: 'Lucky Scratch',        x: 443, y: 135, w:  99, h:  89, type: 'game',        url: './scratch.html' },
   { id: 'bar',       label: 'Bar',                  x: 480, y:  54, w: 705, h: 140, type: 'coming_soon' }
 ];
