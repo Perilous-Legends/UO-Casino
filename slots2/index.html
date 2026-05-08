@@ -5,12 +5,70 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/css/main.css">
+  <script src="../pl-bridge.js?v=20260507a"></script>
+  <div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
   <script>
+  // Slots2 PL bridge integration (best-effort, untested in dev).
+  // The 3rd-party slot lib is obfuscated; we hook its onspinned/onstopped
+  // callbacks to mirror wager/settle into the PL casino session. The
+  // lib's internal `balance` is kept synced with PL's authoritative
+  // balance after every spin.
+  //
+  // ⚠ UNVERIFIED — slots2 is disabled in casino.js until tested live.
+  // If hooks fire with unexpected args this just falls back to lib's
+  // local balance (so slots remain playable in standalone demo mode).
+
+  let _plReady = false, _plLastBet = 0;
+  (async function(){
+    try {
+      const info = await PL.init();
+      slotMachineConfig.balance = info.balance;
+      _plReady = true;
+      PL.onBalanceChanged((b)=>{
+        // Force the lib's display to match server. The lib has its own
+        // internal state; we update via known keys when present.
+        slotMachineConfig.balance = b;
+      });
+    } catch (e) {
+      const banner = document.getElementById('pl-banner');
+      banner.textContent = 'Casino offline: ' + (e && e.message || e) + ' — slots running in DEMO mode (no real gold).';
+      banner.style.background = '#806000';
+      banner.style.display = 'block';
+    }
+  })();
+
+  // Inserted into slotMachineConfig below as `onspinned` and `onstopped`.
+  async function _plOnSpinned(/* spin details */){
+    // Try to read the current bet from the lib's known config key.
+    const bet = slotMachineConfig.bet || slotMachineConfig.defaultBet || 0;
+    if (!_plReady || bet <= 0) return;
+    _plLastBet = bet;
+    try {
+      await PL.wager('slots', bet);
+    } catch (e) {
+      // Insufficient funds during a spin commitment — display warning.
+      const banner = document.getElementById('pl-banner');
+      banner.textContent = e instanceof PL.errors.PLInsufficientFunds
+        ? 'Insufficient bank — try a smaller bet.'
+        : 'Wager error: ' + (e && e.message || e);
+      banner.style.display = 'block';
+      setTimeout(()=>{ banner.style.display='none'; }, 2500);
+    }
+  }
+  async function _plOnStopped(winAmount /* lib passes total win */){
+    if (!_plReady) return;
+    const w = Number(winAmount) || 0;
+    try { await PL.settle('slots', w); }
+    catch (e) { console.error('slots settle failed', e); }
+  }
+
   localStorage.clear();
   var slotMachineConfig = {
     balance: 100000,
     balance: 1000000,
     maxBet: 10000,
+    onspinned: _plOnSpinned,
+    onstopped: _plOnStopped,
     defaultBet: 100,
     betChangeAmount: 100,
     symbols: [

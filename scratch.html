@@ -353,6 +353,8 @@
   </style>
 </head>
 <body>
+<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+<script src="pl-bridge.js?v=20260507a"></script>
 
 <div id="elem-debug-hud" style="display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.92);border:1px solid #00ffff88;border-radius:8px;padding:10px 18px;color:#00ffff;font-size:13px;z-index:8600;font-family:monospace;display:none;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:700px;">
   <span id="elem-debug-coords">Drag buttons or chips to reposition</span>
@@ -365,7 +367,7 @@
   <div class="hud" id="hud-bar">
     <div class="hud-item">
       <div class="hud-label">BALANCE</div>
-      <div class="hud-value" id="balanceDisplay">100,000g</div>
+      <div class="hud-value" id="balanceDisplay">…g</div>
     </div>
     <div class="hud-item">
       <div class="hud-label">BET</div>
@@ -467,7 +469,36 @@
     { pct: 2000, label: 'JACKPOT', img: '../slots2/assets/images/symbols/wild.png',  color: '#ff0066', weight:  0.3 },
   ];
 
-  let balance = 100000;
+  let balance = 0;
+  // PL bridge bootstrap
+  (async function(){
+    const banner = document.getElementById('pl-banner');
+    function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
+    try {
+      const info = await PL.init();
+      balance = info.balance;
+      PL.onBalanceChanged((b)=>{ balance = b; if (typeof updateHUD === 'function') updateHUD(); });
+    } catch (e) {
+      showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
+    }
+  })();
+  async function plWagerScratch(amount){
+    try { await PL.wager('scratch', amount); return true; }
+    catch (e) {
+      const banner = document.getElementById('pl-banner');
+      if (e instanceof PL.errors.PLInsufficientFunds) {
+        banner.textContent = 'Insufficient bank — bet rejected.';
+        banner.style.display = 'block';
+        setTimeout(()=>{ banner.style.display='none'; }, 2500);
+      }
+      return false;
+    }
+  }
+  async function plSettleScratch(amount){
+    if (amount <= 0) return;
+    try { await PL.settle('scratch', amount); }
+    catch (e) { console.error('scratch settle failed', e); }
+  }
   let buyin = 500; // updated per ticket purchase
 
   // 🎰 CHIP SELECTION
@@ -1110,7 +1141,7 @@
     for (let i = 0; i < CELLS; i++) revealCell(i);
   }
 
-  function finishTicket() {
+  async function finishTicket() {
     ticketActive = false;
     document.getElementById('revealAllBtn').textContent = 'Clear Bets';
 
@@ -1125,7 +1156,7 @@
       }
     }
 
-    balance += totalWin;
+    if (totalWin > 0) await plSettleScratch(totalWin); else await plSettleScratch(0);
     updateHUD();
     document.getElementById('lastWinDisplay').textContent = fmt(totalWin);
     document.getElementById('lastWinDisplay').className = 'hud-value green';
@@ -1140,10 +1171,11 @@
     document.getElementById('buyBtn').disabled = balance < TICKET_COST;
   }
 
-  function buyTicket() {
+  async function buyTicket() {
     if (TICKET_COST <= 0 || balance < TICKET_COST) return;
     buyin = TICKET_COST;
-    balance -= TICKET_COST;
+    const ok = await plWagerScratch(TICKET_COST);
+    if (!ok) return;
     // Reset bet display for next round
     TICKET_COST = 0;
     document.getElementById('betDisplay').textContent = '0g';

@@ -119,10 +119,14 @@ body { background:#000; color:#fff; font-family:Georgia,serif; overflow:hidden; 
 
   <!-- Balance bar -->
   <div class="bal-bar">
-    <span>Balance: <strong id="balance">100,000</strong>g</span>
+    <span>Bank: <strong id="balance">…</strong>g</span>
     <span style="color:#aaa;font-size:11px;letter-spacing:2px;">PERILOUS LEGENDS</span>
     <span>Net P/L: <strong id="netPL" style="color:#ffd700">+0</strong>g &nbsp; Hands: <strong id="handsPlayed">0</strong></span>
   </div>
+
+  <!-- PL bridge banner (errors and session-state messages) -->
+  <div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+  <script src="pl-bridge.js?v=20260507a"></script>
 
   <!-- Mute button -->
   <button id="muteBtn" onclick="toggleMute()" title="Toggle music" style="position:fixed;top:10px;right:12px;z-index:999;background:rgba(0,0,0,0.6);border:1px solid #4aff7a44;color:#ffd700;font-size:18px;padding:4px 9px;border-radius:6px;cursor:pointer;line-height:1;">🔊</button>
@@ -282,10 +286,65 @@ function dealerShouldHit(cards){
 function sameVal(c1,c2){ return cardVal(c1.r)===cardVal(c2.r); }
 
 // ── GAME STATE ──
-let balance=100000, netPL=0, handsCount=0;
+// `balance` is a local MIRROR of the server-side casino-session balance.
+// It's updated via PL.onBalanceChanged whenever a wager/settle resolves.
+// We never mutate it directly — the PL bridge owns it.
+let balance=0, netPL=0, handsCount=0;
 let selectedChip=0;
 let G={};
-const PHASES={BET:'bet',INSURANCE:'ins',PLAYER:'player',DEALER:'dealer',RESULT:'result'};
+const PHASES={BET:'bet',INSURANCE:'ins',PLAYER:'player',DEALER:'dealer',RESULT:'result',WAGERING:'wagering'};
+
+// Bootstrap the PL casino bridge. If unavailable, show the banner and
+// keep the page in a non-playable state.
+(async function(){
+  const banner = document.getElementById('pl-banner');
+  function showBanner(msg, color){
+    banner.textContent = msg;
+    banner.style.background = color || '#a30000';
+    banner.style.display = 'block';
+  }
+  try {
+    const info = await PL.init();
+    balance = info.balance;
+    document.getElementById('balance').textContent = PL.fmtGold(balance);
+    PL.onBalanceChanged((b)=>{
+      balance = b;
+      const el = document.getElementById('balance');
+      if (el) el.textContent = PL.fmtGold(b);
+      try { renderBtns(); } catch(_) {}
+    });
+  } catch (e) {
+    showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone in Britain.');
+  }
+})();
+
+// Helper: try to wager and on InsufficientFunds show a brief in-game
+// message. Returns true if wager succeeded.
+async function plWager(amount){
+  try {
+    await PL.wager('blackjack', amount);
+    return true;
+  } catch (e) {
+    if (e instanceof PL.errors.PLInsufficientFunds) {
+      setMsg('Insufficient bank — bet rejected.', 'lose');
+    } else if (e instanceof PL.errors.PLSessionClosed) {
+      setMsg('Casino session closed.', 'lose');
+    } else {
+      setMsg('Network error: ' + (e && e.message || e), 'lose');
+    }
+    return false;
+  }
+}
+// Helper: settle (server credits balance back). Failure is logged but
+// won't roll back the game state — the server has authoritative records.
+async function plSettle(amount){
+  if (amount <= 0) return;
+  try {
+    await PL.settle('blackjack', amount);
+  } catch (e) {
+    setMsg('Settle error: ' + (e && e.message || e) + ' — contact a GM.', 'lose');
+  }
+}
 
 function newGame(){
     const lastBet = G.lastBet || 0;
@@ -349,12 +408,14 @@ function updateBetDisplay(){
 }
 
 // ── DEAL ──
-function doDeal(){
+async function doDeal(){
     if(G.phase!==PHASES.BET) return;
     const bet=G.hands[0].bet;
     if(!bet||bet>balance){ return; }
+    G.phase=PHASES.WAGERING; renderBtns();
+    const ok = await plWager(bet);
+    if (!ok) { G.phase=PHASES.BET; renderBtns(); return; }
     G.lastBet=bet;
-    balance-=bet;
     // Deal sequence: p1, d1, p2, d2(face-down)
     G.hands[0].cards=[draw()];
     G.dealer=[draw()];
@@ -376,18 +437,18 @@ function doDeal(){
     }, 500);
 }
 
-function checkPlayerBJ(){
+async function checkPlayerBJ(){
     const h=G.hands[0];
     if(isBJ(h.cards)){
         // Check if dealer also has BJ (reveal hole card)
         if(isBJ(G.dealer)){
-            // Push
-            balance+=h.bet;
+            // Push — bet returned
+            await plSettle(h.bet);
             settle([{result:'push',net:0}]);
         } else {
-            // Player BJ pays 3:2
+            // Player BJ pays 3:2 (gross payout = bet returned + 1.5x bet)
             const pay=Math.floor(h.bet*1.5);
-            balance+=h.bet+pay;
+            await plSettle(h.bet+pay);
             netPL+=pay; handsCount++; updateStats();
             setMsg('BLACKJACK! Pays 3:2 (+'+fmt(pay)+'g)','bj');
             snd.bigwin();
@@ -401,20 +462,23 @@ function checkPlayerBJ(){
 }
 
 // ── INSURANCE ──
-function takeInsurance(){
+async function takeInsurance(){
     const cost=Math.floor(G.hands[0].bet/2);
-    if(cost>balance-G.hands[0].bet&&cost>balance){ declineInsurance(); return; }
+    if(cost>balance){ declineInsurance(); return; }
+    G.phase=PHASES.WAGERING; renderBtns();
+    const ok = await plWager(cost);
+    if (!ok) { declineInsurance(); return; }
     G.insured=cost;
-    balance-=cost;
     G.phase=PHASES.PLAYER;
     updateStats();
     // Check dealer BJ now
     if(isBJ(G.dealer)){
         const insPay=cost*2;
-        balance+=cost+insPay; // return insurance + 2:1
+        // return insurance + 2:1
+        await plSettle(cost+insPay);
         // Player still loses original bet (unless player also has BJ = push)
         if(isBJ(G.hands[0].cards)){
-            balance+=G.hands[0].bet; // push on original bet
+            await plSettle(G.hands[0].bet); // push on original bet
             settle([{result:'push',net:insPay}]);
         } else {
             netPL-=G.hands[0].bet; netPL+=insPay; handsCount++; updateStats();
@@ -429,13 +493,13 @@ function takeInsurance(){
     checkPlayerBJ();
     renderAll();
 }
-function declineInsurance(){
+async function declineInsurance(){
     G.insured=0;
     G.phase=PHASES.PLAYER;
     if(isBJ(G.dealer)){
         // Dealer has BJ, player loses (unless player also has BJ)
         if(isBJ(G.hands[0].cards)){
-            balance+=G.hands[0].bet;
+            await plSettle(G.hands[0].bet);
             settle([{result:'push',net:0}]);
         } else {
             netPL-=G.hands[0].bet; handsCount++; updateStats();
@@ -467,27 +531,34 @@ function doStand(){
     G.hands[G.active].stood=true;
     advanceHand();
 }
-function doDouble(){
+async function doDouble(){
     if(G.phase!==PHASES.PLAYER) return;
     const h=G.hands[G.active];
     if(h.cards.length!==2||h.doubled) return;
     if(h.bet>balance) return;
-    balance-=h.bet; h.bet*=2; h.doubled=true;
+    G.phase=PHASES.WAGERING; renderBtns();
+    const ok = await plWager(h.bet);
+    if (!ok) { G.phase=PHASES.PLAYER; renderBtns(); return; }
+    h.bet*=2; h.doubled=true;
     h.cards.push(draw()); snd.chip(); snd.card();
     const {total}=handVal(h.cards);
     if(total>21) h.busted=true;
     h.stood=true;
+    G.phase=PHASES.PLAYER;
     renderAll(); updateStats();
     setTimeout(()=>advanceHand(),400);
 }
-function doSplit(){
+async function doSplit(){
     if(G.phase!==PHASES.PLAYER) return;
     const h=G.hands[G.active];
     if(h.cards.length!==2||!sameVal(h.cards[0],h.cards[1])) return;
     if(G.splitCount>=2) return;
     if(h.bet>balance) return;
+    G.phase=PHASES.WAGERING; renderBtns();
+    const ok = await plWager(h.bet);
+    if (!ok) { G.phase=PHASES.PLAYER; renderBtns(); return; }
+    G.phase=PHASES.PLAYER;
     const isAce=h.cards[0].r===12;
-    balance-=h.bet;
     // Split: take one card from current hand, create new hand
     const c2=h.cards.pop();
     const newHand={cards:[c2],bet:h.bet,doubled:false,stood:false,busted:false,splitAce:isAce};
@@ -550,25 +621,28 @@ function dealerPlay(){
 }
 
 // ── SETTLEMENT ──
-function settleAll(){
+async function settleAll(){
     const dv=handVal(G.dealer).total;
     const dBust=dv>21;
     const results=[];
     let totalNet=0;
+    let grossPayout=0; // gross credit to send to PL.settle
     for(const h of G.hands){
         const pv=handVal(h.cards).total;
         const pBJ=isBJ(h.cards)&&G.splitCount===0; // BJ only valid if no split
         let net=0,result='';
         if(h.busted){ result='lose'; net=-h.bet; }
-        else if(pBJ&&!isBJ(G.dealer)){ const pay=Math.floor(h.bet*1.5); balance+=h.bet+pay; net=pay; result='bj'; }
-        else if(dBust){ balance+=h.bet*2; net=h.bet; result='win'; }
-        else if(pv>dv){ balance+=h.bet*2; net=h.bet; result='win'; }
-        else if(pv===dv){ balance+=h.bet; net=0; result='push'; }
+        else if(pBJ&&!isBJ(G.dealer)){ const pay=Math.floor(h.bet*1.5); grossPayout+=h.bet+pay; net=pay; result='bj'; }
+        else if(dBust){ grossPayout+=h.bet*2; net=h.bet; result='win'; }
+        else if(pv>dv){ grossPayout+=h.bet*2; net=h.bet; result='win'; }
+        else if(pv===dv){ grossPayout+=h.bet; net=0; result='push'; }
         else { result='lose'; net=-h.bet; }
         totalNet+=net;
         results.push({result,net,pv,dv});
     }
     totalNet-=G.insured; // insurance already settled if not used
+    if (grossPayout > 0) await plSettle(grossPayout);
+    else await plSettle(0); // record loss settlement so the round closes server-side
     netPL+=totalNet; handsCount++; updateStats();
     G.phase=PHASES.RESULT;
     renderAll();

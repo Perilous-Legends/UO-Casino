@@ -10,9 +10,16 @@ const PLAYER_BODY_W = 20;
 const PLAYER_BODY_H = 16;
 const ARRIVE_THRESHOLD = 6;
 
-// Get player name from URL
+// Player name comes from the PL bridge (PL.init() in index.html). The
+// bridge resolves it from the server's session record. Fall back to the
+// legacy ?name= URL param for offline/dev sessions where the bridge is
+// unavailable.
+//
+// `let` (not `const`) — the bridge's PL.init() is async and may not have
+// resolved by the time this script runs. startGame() awaits the bridge
+// readiness below and refreshes playerName before Phaser starts.
 const urlParams = new URLSearchParams(window.location.search);
-const playerName = urlParams.get('name') || 'Adventurer';
+let playerName = urlParams.get('name') || 'Adventurer';
 
 // Determined before Phaser init by startGame()
 let spriteBody = 'male';
@@ -40,7 +47,12 @@ const ZONES = [
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w: 94, h: 58, type: 'game',       url: './uth-test.html' },
   { id: 'kong',      label: "Dragon's Lair",        x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
-  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/' },
+  // Slots2 uses an obfuscated third-party slot library — it can't be
+  // safely patched to use the PL bridge's authoritative-balance flow.
+  // Marked 'coming_soon' so players can't play it for free against an
+  // unlinked balance. Re-enable once slots2/main.js is replaced or the
+  // wager/settle calls are wrapped via the library's event hooks.
+  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'coming_soon' },
   { id: 'scratch',   label: 'Lucky Scratch',        x: 449, y: 123, w:  85, h:  65, type: 'game',        url: './scratch.html' },
   { id: 'bar',       label: 'Bar',                  x: 480, y:  54, w: 705, h: 140, type: 'coming_soon' }
 ];
@@ -1141,6 +1153,16 @@ class CasinoScene extends Phaser.Scene {
 
 // Fetch manifest and determine sprite body BEFORE creating Phaser game
 async function startGame() {
+  // Wait briefly for the PL bridge to resolve the character name before
+  // we pick a sprite body. Cap the wait so a missing/offline bridge
+  // doesn't block the floor from loading entirely.
+  if (window.PL && PL.character) {
+    const deadline = Date.now() + 3000;
+    while (!PL.character() && Date.now() < deadline && !PL.isClosed()) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+    if (PL.character()) playerName = PL.character();
+  }
   try {
     const resp = await fetch('sprites/manifest.json?v=' + Date.now());
     manifest = await resp.json();

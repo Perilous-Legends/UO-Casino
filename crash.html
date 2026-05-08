@@ -185,6 +185,8 @@ body{
 </style>
 </head>
 <body>
+<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+<script src="pl-bridge.js?v=20260507a"></script>
 <div id="game-wrap">
   <button id="muteBtn" onclick="toggleMute()" title="Toggle music">&#x1f50a;</button>
   <audio id="bgMusic" loop src="./bg-music.mp3"></audio>
@@ -193,7 +195,7 @@ body{
   <!-- TOP BAR -->
   <div class="top-bar">
     <div class="history" id="history"></div>
-    <div class="bal-display">Balance: <strong id="balance">100,000</strong>g</div>
+    <div class="bal-display">Bank: <strong id="balance">…</strong>g</div>
   </div>
 
   <!-- CANVAS AREA -->
@@ -232,7 +234,37 @@ body{
 
 <script>
 /* ── GLOBALS ── */
-let balance = 100000;
+let balance = 0;
+// PL bridge bootstrap — must run before placeBet/cashOut.
+(async function(){
+  const banner = document.getElementById('pl-banner');
+  function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
+  try {
+    const info = await PL.init();
+    balance = info.balance;
+    PL.onBalanceChanged((b)=>{ balance = b; if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay(); });
+    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
+  } catch (e) {
+    showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
+  }
+})();
+async function plWagerCrash(amount){
+  try { await PL.wager('crash', amount); return true; }
+  catch (e) {
+    const banner = document.getElementById('pl-banner');
+    if (e instanceof PL.errors.PLInsufficientFunds) {
+      banner.textContent = 'Insufficient bank — bet rejected.';
+      banner.style.display = 'block';
+      setTimeout(()=>{ banner.style.display='none'; }, 2500);
+    }
+    return false;
+  }
+}
+async function plSettleCrash(amount){
+  if (amount <= 0) return;
+  try { await PL.settle('crash', amount); }
+  catch (e) { console.error('crash settle failed', e); }
+}
 let currentBet = 0;
 let selectedChip = null;
 let crashHistory = [];
@@ -427,13 +459,12 @@ function placeBet(){
   }
 }
 
-function cashOut(){
+async function cashOut(){
   if(phase !== PHASE.FLYING || cashedOut || !betPlaced) return;
   cashedOut = true;
   cashoutMult = multiplier;
   const winnings = Math.floor(currentBet * cashoutMult);
-  balance += winnings;
-  updateBalanceDisplay();
+  await plSettleCrash(winnings);
   showResult(true, winnings - currentBet);
   btnCashout.classList.remove('active');
   btnCashout.disabled = true;
@@ -638,7 +669,7 @@ function startBetting(){
   }, 1000);
 }
 
-function startFlying(){
+async function startFlying(){
   phase = PHASE.FLYING;
   phaseLabel.textContent = '';
   phaseLabel.style.opacity = '0';
@@ -646,8 +677,15 @@ function startFlying(){
   btnBet.style.display = 'none';
 
   if(betPlaced){
-    balance -= currentBet;
-    updateBalanceDisplay();
+    // Place the wager with the server now that the round is starting.
+    // If the server rejects (e.g. insufficient funds — should not happen
+    // because we checked at placeBet, but races are possible), abort
+    // this round's bet.
+    const ok = await plWagerCrash(currentBet);
+    if (!ok) {
+      betPlaced = false;
+      return;
+    }
     btnCashout.style.display = 'inline-block';
     btnCashout.classList.add('active');
     btnCashout.disabled = false;
@@ -673,8 +711,9 @@ function triggerCrash(){
   // Crash particles
   spawnParticles(30, 'crash');
 
-  // If player didn't cash out
+  // If player didn't cash out — settle as a loss (server credits 0).
   if(betPlaced && !cashedOut){
+    plSettleCrash(0);
     showResult(false, 0);
   }
 

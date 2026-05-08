@@ -785,6 +785,8 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 <body>
+<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+<script src="pl-bridge.js?v=20260507a"></script>
 
 
 
@@ -805,7 +807,7 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 
-  <span>Balance: <strong id="balDisplay">100,000</strong>g</span>
+  <span>Bank: <strong id="balDisplay">…</strong>g</span>
 
 
 
@@ -978,7 +980,7 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
   <button class="btn-roll" id="btnRoll" onclick="rollDice()" style="margin:0 auto;">ROLL</button>
 
   <div class="hud-info">
-    <div>Bal: <strong id="balDisplay" style="color:#ffd700;">100,000</strong>g</div>
+    <div>Bank: <strong id="balDisplay" style="color:#ffd700;">…</strong>g</div>
     <div>Bet: <strong id="betDisplay" style="color:#ffd700;">0</strong>g</div>
     <div>Roll Net: <strong id="netDisplay" style="color:#ffd700;">+0g</strong></div>
   </div>
@@ -1661,7 +1663,39 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 
-let balance = 100000, selectedChip = 100, rolling = false;
+// `balance` mirrors PL's server-authoritative balance.
+let balance = 0, selectedChip = 100, rolling = false;
+
+// PL bridge bootstrap
+(async function(){
+  const banner = document.getElementById('pl-banner');
+  function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
+  try {
+    const info = await PL.init();
+    balance = info.balance;
+    PL.onBalanceChanged((b)=>{ balance = b; if (typeof updateUI === 'function') updateUI(); });
+    if (typeof updateUI === 'function') updateUI();
+  } catch (e) {
+    showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
+  }
+})();
+async function plWagerCraps(amount){
+  try { await PL.wager('craps', amount); return true; }
+  catch (e) {
+    const banner = document.getElementById('pl-banner');
+    if (e instanceof PL.errors.PLInsufficientFunds) {
+      banner.textContent = 'Insufficient bank — bet rejected.';
+      banner.style.background = '#a30000'; banner.style.display = 'block';
+      setTimeout(()=>{ banner.style.display='none'; }, 2200);
+    }
+    return false;
+  }
+}
+async function plSettleCraps(amount){
+  if (amount <= 0) return;
+  try { await PL.settle('craps', amount); }
+  catch (e) { console.error('craps settle failed', e); }
+}
 
 
 
@@ -1919,7 +1953,7 @@ function togglePlaceOff(){
 
 
 
-function placeBet(id){
+async function placeBet(id){
 
 
 
@@ -1972,7 +2006,11 @@ function placeBet(id){
 
 
     if(rollNetPending){ rollNet=0; stakeReturn=0; rollNetPending=false; }
-    bets[id]=(bets[id]||0)+selectedChip; balance-=selectedChip; rollNet-=selectedChip;
+    {
+      const ok = await plWagerCraps(selectedChip);
+      if (!ok) return;
+    }
+    bets[id]=(bets[id]||0)+selectedChip; rollNet-=selectedChip;
 
 
 
@@ -2013,7 +2051,11 @@ function placeBet(id){
 
 
   if(rollNetPending){ rollNet=0; stakeReturn=0; rollNetPending=false; }
-  bets[id]=(bets[id]||0)+selectedChip; balance-=selectedChip; rollNet-=selectedChip;
+  {
+    const ok = await plWagerCraps(selectedChip);
+    if (!ok) return;
+  }
+  bets[id]=(bets[id]||0)+selectedChip; rollNet-=selectedChip;
 
 
 
@@ -2033,7 +2075,7 @@ function placeBet(id){
 
 
 
-function removeBet(id){
+async function removeBet(id){
 
 
 
@@ -2057,7 +2099,8 @@ function removeBet(id){
 
 
 
-    balance+=b; bets[id]=0; rollNet+=b;
+    bets[id]=0; rollNet+=b;
+    await plSettleCraps(b); // refund the wager via the server
 
 
 
@@ -2077,19 +2120,19 @@ function removeBet(id){
 
 
 
-function removeComeOdds(num){ if(!comeOdds[num]) return; const r=comeOdds[num]; balance+=r; rollNet+=r; delete comeOdds[num]; updateUI(); updateZoneStates(); showMsg(`Come ${num} odds removed`,'neutral'); }
+async function removeComeOdds(num){ if(!comeOdds[num]) return; const r=comeOdds[num]; rollNet+=r; delete comeOdds[num]; await plSettleCraps(r); updateUI(); updateZoneStates(); showMsg(`Come ${num} odds removed`,'neutral'); }
 
 
 
-function removeDCOdds(num)  { if(!dontComeOdds[num]) return; const r=dontComeOdds[num]; balance+=r; rollNet+=r; delete dontComeOdds[num]; updateUI(); updateZoneStates(); showMsg(`DC ${num} lay odds removed`,'neutral'); }
+async function removeDCOdds(num)  { if(!dontComeOdds[num]) return; const r=dontComeOdds[num]; rollNet+=r; delete dontComeOdds[num]; await plSettleCraps(r); updateUI(); updateZoneStates(); showMsg(`DC ${num} lay odds removed`,'neutral'); }
 
 
 
-function removeComeBet(num) { if(!comeBets[num]) return; const r=comeBets[num]+(comeOdds[num]||0); balance+=r; rollNet+=r; delete comeBets[num]; delete comeOdds[num]; updateUI(); updateZoneStates(); showMsg(`Come ${num} removed`,'neutral'); }
+async function removeComeBet(num) { if(!comeBets[num]) return; const r=comeBets[num]+(comeOdds[num]||0); rollNet+=r; delete comeBets[num]; delete comeOdds[num]; await plSettleCraps(r); updateUI(); updateZoneStates(); showMsg(`Come ${num} removed`,'neutral'); }
 
 
 
-function removeDCBet(num)   { if(!dontCome[num]) return; const r=dontCome[num]+(dontComeOdds[num]||0); balance+=r; rollNet+=r; delete dontCome[num]; delete dontComeOdds[num]; updateUI(); updateZoneStates(); showMsg(`DC ${num} removed`,'neutral'); }
+async function removeDCBet(num)   { if(!dontCome[num]) return; const r=dontCome[num]+(dontComeOdds[num]||0); rollNet+=r; delete dontCome[num]; delete dontComeOdds[num]; await plSettleCraps(r); updateUI(); updateZoneStates(); showMsg(`DC ${num} removed`,'neutral'); }
 
 
 
@@ -2101,7 +2144,7 @@ function removeDCBet(num)   { if(!dontCome[num]) return; const r=dontCome[num]+(
 
 
 
-function addComeOdds(num){
+async function addComeOdds(num){
 
 
 
@@ -2138,7 +2181,11 @@ function addComeOdds(num){
 
 
   if(rollNetPending){ rollNet=0; stakeReturn=0; rollNetPending=false; }
-  comeOdds[num] = cur + amt; balance -= amt; rollNet -= amt;
+  {
+    const ok = await plWagerCraps(amt);
+    if (!ok) return;
+  }
+  comeOdds[num] = cur + amt; rollNet -= amt;
 
 
 
@@ -2162,7 +2209,7 @@ function addComeOdds(num){
 
 
 
-function addDCOdds(num){
+async function addDCOdds(num){
 
 
 
@@ -2199,7 +2246,11 @@ function addDCOdds(num){
 
 
   if(rollNetPending){ rollNet=0; stakeReturn=0; rollNetPending=false; }
-  dontComeOdds[num] = cur + amt; balance -= amt; rollNet -= amt;
+  {
+    const ok = await plWagerCraps(amt);
+    if (!ok) return;
+  }
+  dontComeOdds[num] = cur + amt; rollNet -= amt;
 
 
 
@@ -2231,7 +2282,7 @@ function oddsLbl(n){ return {4:'2:1',5:'3:2',6:'6:5',8:'6:5',9:'3:2',10:'2:1'}[n
 
 
 
-function clearBets(){
+async function clearBets(){
 
 
 
@@ -2263,7 +2314,9 @@ function clearBets(){
 
 
 
-  balance+=refund; rollNet+=refund; updateUI(); updateZoneStates();
+  rollNet+=refund;
+  await plSettleCraps(refund);
+  updateUI(); updateZoneStates();
 
 
 
@@ -2372,7 +2425,7 @@ function rollDice(){
 
 
 
-function resolveRoll(){
+async function resolveRoll(){
 
 
 
@@ -2381,6 +2434,10 @@ function resolveRoll(){
 
 
   let winTotal=0,lostTotal=0,payouts=[],losses=[]; stakeReturn=0;
+  // Accumulate the round's gross payout (returned stake + winnings) and
+  // settle ONCE with the server at the end. Avoids 12+ API round-trips
+  // per roll while keeping balance authoritative on the server.
+  let grossPayout = 0;
 
 
 
@@ -2388,7 +2445,7 @@ function resolveRoll(){
 
 
 
-  function collect(id,mult,label){ const b=bets[id]||0; if(!b) return; const p=Math.round(b*mult); balance+=b+p; bets[id]=0; winTotal+=p; stakeReturn+=b; payouts.push(`${label} +${fmt(p)}g`); }
+  function collect(id,mult,label){ const b=bets[id]||0; if(!b) return; const p=Math.round(b*mult); grossPayout+=b+p; bets[id]=0; winTotal+=p; stakeReturn+=b; payouts.push(`${label} +${fmt(p)}g`); }
 
 
 
@@ -2396,7 +2453,7 @@ function resolveRoll(){
 
 
 
-  function push(id,label){ const b=bets[id]||0; if(!b) return; balance+=b; rollNet+=b; bets[id]=0; if(label) payouts.push(`${label} push`); }
+  function push(id,label){ const b=bets[id]||0; if(!b) return; grossPayout+=b; rollNet+=b; bets[id]=0; if(label) payouts.push(`${label} push`); }
 
 
 
@@ -2536,7 +2593,7 @@ function resolveRoll(){
 
 
 
-    [4,5,6,8,9,10].forEach(n=>{ const b=bets['place'+n]||0; if(b){ balance+=b; rollNet+=b; bets['place'+n]=0; payouts.push(`Place ${n} OFF  -  refunded`); } });
+    [4,5,6,8,9,10].forEach(n=>{ const b=bets['place'+n]||0; if(b){ grossPayout+=b; rollNet+=b; bets['place'+n]=0; payouts.push(`Place ${n} OFF  -  refunded`); } });
 
 
 
@@ -2564,11 +2621,11 @@ function resolveRoll(){
 
 
 
-      balance+=cb*2; winTotal+=cb; stakeReturn+=cb; payouts.push(`Come ${n} +${fmt(cb)}g`);
+      grossPayout+=cb*2; winTotal+=cb; stakeReturn+=cb; payouts.push(`Come ${n} +${fmt(cb)}g`);
 
 
 
-      if(co){ const w=Math.round(co*PASS_ODDS[n]); balance+=co+w; winTotal+=w; stakeReturn+=co; payouts.push(`Come ${n} Odds +${fmt(w)}g`); delete comeOdds[n]; }
+      if(co){ const w=Math.round(co*PASS_ODDS[n]); grossPayout+=co+w; winTotal+=w; stakeReturn+=co; payouts.push(`Come ${n} Odds +${fmt(w)}g`); delete comeOdds[n]; }
 
 
 
@@ -2616,11 +2673,11 @@ function resolveRoll(){
 
 
 
-      balance+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`DC ${n} +${fmt(db)}g`);
+      grossPayout+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`DC ${n} +${fmt(db)}g`);
 
 
 
-      if(dco){ const w=Math.round(dco*LAY_ODDS[n]); balance+=dco+w; winTotal+=w; stakeReturn+=dco; payouts.push(`DC ${n} Odds +${fmt(w)}g`); delete dontComeOdds[n]; }
+      if(dco){ const w=Math.round(dco*LAY_ODDS[n]); grossPayout+=dco+w; winTotal+=w; stakeReturn+=dco; payouts.push(`DC ${n} Odds +${fmt(w)}g`); delete dontComeOdds[n]; }
 
 
 
@@ -2660,7 +2717,7 @@ function resolveRoll(){
 
 
 
-    if(total===7||total===11){ const cb0=bets.come; balance+=cb0*2; winTotal+=cb0; stakeReturn+=cb0; payouts.push(`Come +${fmt(cb0)}g`); bets.come=0; }
+    if(total===7||total===11){ const cb0=bets.come; grossPayout+=cb0*2; winTotal+=cb0; stakeReturn+=cb0; payouts.push(`Come +${fmt(cb0)}g`); bets.come=0; }
 
 
 
@@ -2688,7 +2745,7 @@ function resolveRoll(){
 
 
 
-    if(total===2||total===3){ const dc0=bets.dontcome; balance+=dc0*2; winTotal+=dc0; stakeReturn+=dc0; payouts.push(`DC +${fmt(dc0)}g`); bets.dontcome=0; }
+    if(total===2||total===3){ const dc0=bets.dontcome; grossPayout+=dc0*2; winTotal+=dc0; stakeReturn+=dc0; payouts.push(`DC +${fmt(dc0)}g`); bets.dontcome=0; }
 
 
 
@@ -2816,11 +2873,11 @@ function resolveRoll(){
 
 
 
-      if(pb){ balance+=pb*2; winTotal+=pb; stakeReturn+=pb; payouts.push(`Pass Line +${fmt(pb)}g`); bets.passline=0; }
+      if(pb){ grossPayout+=pb*2; winTotal+=pb; stakeReturn+=pb; payouts.push(`Pass Line +${fmt(pb)}g`); bets.passline=0; }
 
 
 
-      if(bets.passodds){ const w=Math.round(bets.passodds*PASS_ODDS[point]); const po=bets.passodds; balance+=po+w; winTotal+=w; stakeReturn+=po; payouts.push(`Pass Odds +${fmt(w)}g`); bets.passodds=0; }
+      if(bets.passodds){ const w=Math.round(bets.passodds*PASS_ODDS[point]); const po=bets.passodds; grossPayout+=po+w; winTotal+=w; stakeReturn+=po; payouts.push(`Pass Odds +${fmt(w)}g`); bets.passodds=0; }
 
 
 
@@ -2848,11 +2905,11 @@ function resolveRoll(){
 
 
 
-      if(db){ balance+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`Don't Pass +${fmt(db)}g`); bets.dontpass=0; }
+      if(db){ grossPayout+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`Don't Pass +${fmt(db)}g`); bets.dontpass=0; }
 
 
 
-      if(bets.dontodds){ const w=Math.round(bets.dontodds*LAY_ODDS[point]); const dpo=bets.dontodds; balance+=dpo+w; winTotal+=w; stakeReturn+=dpo; payouts.push(`Lay Odds +${fmt(w)}g`); bets.dontodds=0; }
+      if(bets.dontodds){ const w=Math.round(bets.dontodds*LAY_ODDS[point]); const dpo=bets.dontodds; grossPayout+=dpo+w; winTotal+=w; stakeReturn+=dpo; payouts.push(`Lay Odds +${fmt(w)}g`); bets.dontodds=0; }
 
 
 
@@ -2911,6 +2968,10 @@ function resolveRoll(){
   if(removeMode){ removeMode=false; document.getElementById('btnRemove').classList.remove('active'); }
 
 
+
+  // Send the round's gross payout to the server. settle(0) on a pure
+  // loss so the server still records the round closure.
+  await plSettleCraps(grossPayout);
 
   updatePuck(); updateZoneStates(); updateUI(); rolling=false;
 

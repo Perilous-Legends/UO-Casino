@@ -336,6 +336,8 @@ body{
 </style>
 </head>
 <body>
+<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+<script src="pl-bridge.js?v=20260507a"></script>
 <div class="game">
 
   <!-- TABLE -->
@@ -369,7 +371,7 @@ body{
         <button class="aBtn" id="rebetBtn" onclick="rebet()">REBET</button>
         <button class="aBtn" id="clearBtn" onclick="clearBets()">CLEAR</button>
       </div>
-      <div id="balSection">Balance: <b id="balDisp">100,000g</b></div>
+      <div id="balSection">Bank: <b id="balDisp">…g</b></div>
     </div>
   </div>
 
@@ -456,18 +458,40 @@ function buildChips(){
 function selectChip(v){ playClick(); selectedChip=v; buildChips(); }
 
 // ---- STATE ----
-let balance=100000, bets={}, lastBets={}, spinning=false, winNumber=null;
+// `balance` mirrors PL's server-authoritative balance. We don't decrement
+// it on chip-clicks — bets accumulate locally, and the actual wager
+// happens on Spin (single PL.wager call for the round total).
+// The displayed remaining bank shows balance - totalBet() pre-spin.
+let balance=0, bets={}, lastBets={}, spinning=false, winNumber=null;
+// True while bets are local (not yet wagered against the server). Flips
+// to false during spin/settle so the displayed remaining bank doesn't
+// double-deduct.
+let betsArePending=true;
 function totalBet(){ return Object.values(bets).reduce((a,b)=>a+b,0); }
 
+// PL bridge bootstrap
+(async function(){
+  const banner = document.getElementById('pl-banner');
+  function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
+  try {
+    const info = await PL.init();
+    balance = info.balance;
+    PL.onBalanceChanged((b)=>{ balance = b; updateUI(); });
+    updateUI();
+  } catch (e) {
+    showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
+  }
+})();
+
 function placeBet(key){
-  if(spinning||balance<selectedChip) return;
+  if(spinning||(balance-totalBet())<selectedChip) return;
   playClick();
-  bets[key]=(bets[key]||0)+selectedChip; balance-=selectedChip; updateUI();
+  bets[key]=(bets[key]||0)+selectedChip; updateUI();
 }
 function clearBets(){
   if(spinning) return;
   playClick();
-  Object.values(bets).forEach(v=>balance+=v); bets={}; updateUI();
+  bets={}; updateUI();
 }
 function rebet(){
   if(!Object.keys(lastBets).length) return;
@@ -475,11 +499,14 @@ function rebet(){
   clearBets();
   const tot=Object.values(lastBets).reduce((a,b)=>a+b,0);
   if(balance<tot) return;
-  bets={...lastBets}; balance-=tot; updateUI();
+  bets={...lastBets}; updateUI();
 }
 
 function updateUI(){
-  document.getElementById('balDisp').textContent=balance.toLocaleString()+'g';
+  // Display remaining bank: server balance minus the pending bets on the
+  // table (until Spin actually places the wager).
+  const remaining = betsArePending ? balance - totalBet() : balance;
+  document.getElementById('balDisp').textContent=remaining.toLocaleString()+'g';
   document.getElementById('betDisp').textContent=totalBet().toLocaleString()+'g';
   updateProbeIndicators();
 }
@@ -606,12 +633,31 @@ ballAudio.pause(); ballAudio.currentTime=0;
   drawWheel(); animId=requestAnimationFrame(animate);
 }
 
-function spin(){
+async function spin(){
   if(spinning||totalBet()===0) return;
+  const tot = totalBet();
+  if (tot > balance) return;
+  document.getElementById('spinBtn').disabled=true;
+  // Wager the entire round total with the server before any animation
+  // starts — if the wager is rejected, balance stays untouched and the
+  // round never begins.
+  try {
+    await PL.wager('roulette', tot);
+    betsArePending=false; // server now owns the bet — local display shouldn't subtract again
+  } catch (e) {
+    document.getElementById('spinBtn').disabled=false;
+    if (e instanceof PL.errors.PLInsufficientFunds) {
+      const banner = document.getElementById('pl-banner');
+      banner.textContent = 'Insufficient bank — wager rejected.';
+      banner.style.background = '#a30000';
+      banner.style.display = 'block';
+      setTimeout(()=>{ banner.style.display='none'; }, 3000);
+    }
+    return;
+  }
   playClick();
   syncCanvasSize();
   lastBets={...bets}; spinning=true; spinDone=false;
-  document.getElementById('spinBtn').disabled=true;
   document.getElementById('resultBanner').style.display='none';
   document.getElementById('rebetBtn').style.visibility='hidden';
   const R=canvas.width/2;
@@ -643,9 +689,11 @@ function calcPayout(wn){
   return total;
 }
 
-function showResult(){
+async function showResult(){
   const payout=calcPayout(winNumber);
-  balance+=payout;
+  // Server credits the gross payout (0 = pure loss).
+  try { await PL.settle('roulette', payout); }
+  catch (e) { /* error surfaced to console; balance is already authoritative */ console.error('settle failed', e); }
   const net=payout-totalBet();
   const col=colorOf(winNumber);
   const won = net > 0;
@@ -666,6 +714,8 @@ function newRound(){
   playClick();
   document.getElementById('resultBanner').style.display='none';
   winNumber=null; ballRadius=0; drawWheel();
+  betsArePending=true; // back to bet-placement phase
+  updateUI();
 }
 
 // ---- HIT ZONES: numbers 1-36 (invisible, locked) ----

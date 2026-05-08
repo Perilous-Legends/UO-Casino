@@ -25,7 +25,14 @@
       el.textContent = 'PROMISE ERROR: ' + e.reason;
     });
   </script>
-  <!-- Casino mute button -->
+  <!-- Casino HUD: balance + character + Return-to-PL button -->
+  <div id="pl-hud" style="position:fixed;top:10px;left:12px;z-index:999;background:rgba(0,0,0,0.7);border:1px solid #c9a84c66;color:#ffd700;font-family:'Trebuchet MS',sans-serif;font-size:14px;padding:8px 14px;border-radius:8px;display:none;line-height:1.3;">
+    <div><span style="color:#cccccc;font-size:11px;">Character</span> <strong id="pl-char">…</strong></div>
+    <div><span style="color:#cccccc;font-size:11px;">Bank</span> <strong id="pl-balance">…</strong>g</div>
+    <button id="pl-return" style="margin-top:6px;background:#3a2a08;color:#ffd700;border:1px solid #c9a84c;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;">Return to PL</button>
+  </div>
+  <div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+
   <button id="casinoMuteBtn" onclick="toggleCasinoMute()" title="Toggle music" style="position:fixed;top:10px;right:12px;z-index:999;background:rgba(0,0,0,0.6);border:1px solid #c9a84c44;color:#ffd700;font-size:18px;padding:4px 9px;border-radius:6px;cursor:pointer;line-height:1;">🔊</button>
 
   <div id="game-container">
@@ -40,7 +47,54 @@
     </div>
   </div>
 
+  <script src="pl-bridge.js?v=20260507a"></script>
+  <script>
+    // Bootstrap the PL casino bridge before the floor draws. If the
+    // session URL is missing or the API is unreachable, the floor still
+    // loads (so dev work / standalone testing isn't blocked) — the
+    // banner just warns.
+    (async function () {
+      const banner = document.getElementById('pl-banner');
+      const hud    = document.getElementById('pl-hud');
+      const charEl = document.getElementById('pl-char');
+      const balEl  = document.getElementById('pl-balance');
+      const retBtn = document.getElementById('pl-return');
+
+      function showBanner(msg, color) {
+        banner.textContent = msg;
+        banner.style.background = color || '#a30000';
+        banner.style.display = 'block';
+      }
+
+      try {
+        const info = await PL.init();
+        charEl.textContent = info.character || info.account || 'Player';
+        balEl.textContent  = PL.fmtGold(info.balance);
+        hud.style.display  = 'block';
+        PL.onBalanceChanged((b) => { balEl.textContent = PL.fmtGold(b); });
+
+        retBtn.addEventListener('click', async () => {
+          if (!confirm('End your casino session and deposit ' + PL.fmtGold(PL.balance()) +
+                       'g back to your bank in PL?')) return;
+          retBtn.disabled = true;
+          try {
+            const r = await PL.end();
+            showBanner('Session closed. ' + PL.fmtGold(r.deposited) +
+                       'g deposited as a Bank Check. You may close this tab.', '#0a6e3a');
+            hud.style.display = 'none';
+          } catch (e) {
+            showBanner('Failed to close session: ' + (e && e.message), '#a30000');
+            retBtn.disabled = false;
+          }
+        });
+      } catch (e) {
+        showBanner('No casino session: ' + (e && e.message ? e.message : e) +
+                   ' — buy in from a Casino Stone in Britain to start.', '#a30000');
+      }
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-  <script src="casino.js?v=20260321j"></script>
+  <script src="casino.js?v=20260507a"></script>
 </body>
 </html>

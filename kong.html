@@ -591,6 +591,8 @@ body { background:#000; color:#fff; font-family:Georgia,serif; overflow:hidden; 
 </style>
 </head>
 <body>
+<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
+<script src="pl-bridge.js?v=20260507a"></script>
 
 
 
@@ -639,7 +641,7 @@ body { background:#000; color:#fff; font-family:Georgia,serif; overflow:hidden; 
 
         <!-- Balance bar -->
         <div class="bal-bar">
-            <div>BALANCE: <span id="balDisp">100,000g</span></div>
+            <div>BANK: <span id="balDisp">…g</span></div>
             <div id="rulesDisp" style="font-size:15px;color:#ffffff;letter-spacing:1px;font-weight:bold;flex:1;text-align:center;"></div>
             <div id="winDisp"></div>
         </div>
@@ -742,7 +744,37 @@ function cellImg(src){
 }
 
 // ---- STATE ----
-let balance = 100000;
+// Server-mirrored balance via PL bridge.
+let balance = 0;
+(async function(){
+  const banner = document.getElementById('pl-banner');
+  function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
+  try {
+    const info = await PL.init();
+    balance = info.balance;
+    PL.onBalanceChanged((b)=>{ balance = b; if (typeof renderBalDisp === 'function') renderBalDisp(); });
+    if (typeof renderBalDisp === 'function') renderBalDisp();
+  } catch (e) {
+    showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
+  }
+})();
+async function plWagerKong(amount){
+  try { await PL.wager('kong', amount); return true; }
+  catch (e) {
+    const banner = document.getElementById('pl-banner');
+    if (e instanceof PL.errors.PLInsufficientFunds) {
+      banner.textContent = 'Insufficient bank — bet rejected.';
+      banner.style.display = 'block';
+      setTimeout(()=>{ banner.style.display='none'; }, 2500);
+    }
+    return false;
+  }
+}
+async function plSettleKong(amount){
+  if (amount <= 0) return;
+  try { await PL.settle('kong', amount); }
+  catch (e) { console.error('kong settle failed', e); }
+}
 let G = freshGame();
 let selectedChip = 100;
 let currentMode = 'easy';
@@ -850,14 +882,15 @@ function setMode(mode){
 }
 
 // ---- PLAY ----
-function startPlay(){
+async function startPlay(){
     if(G.phase !== PHASES.BET) return;
     playSound(SFX_CLICK);
     startBGM();
     if(G.bet <= 0){ G.bet = Math.min(selectedChip, balance); renderBetDisp(); }
     if(G.bet <= 0 || G.bet > balance) return;
 
-    balance -= G.bet;
+    const ok = await plWagerKong(G.bet);
+    if (!ok) return;
     G.traps = generateTraps(currentMode);
     G.row = 1;
     G.phase = PHASES.PLAY;
@@ -874,7 +907,7 @@ function startPlay(){
     renderRulesDisp();
 }
 
-function clickCell(row, col){
+async function clickCell(row, col){
     if(G.phase !== PHASES.PLAY || row !== G.row) return;
     const trapCols = G.traps[row]; // array of trap indices
     const isTrapped = trapCols.includes(col);
@@ -900,6 +933,7 @@ function clickCell(row, col){
         setTimeout(() => revealAllTraps(row), 300);
         G.phase = PHASES.RESULT;
         G.won = 0;
+        await plSettleKong(0); // record loss settlement so server can close the round
         renderActions(); // clear cashout button immediately on bust
         setTimeout(() => showResult(false, row-1), 700);
         updateRowStates();
@@ -908,7 +942,7 @@ function clickCell(row, col){
         G.row++;
         if(G.row > ROWS){
             G.won = Math.round(G.bet * multAtRow(currentMode, ROWS));
-            balance += G.won;
+            await plSettleKong(G.won);
             G.phase = PHASES.RESULT;
             document.getElementById('chooseDisp').style.display = 'none';
             renderBalDisp();
@@ -955,13 +989,13 @@ function revealUnclickedCells(){
     }
 }
 
-function cashOut(){
+async function cashOut(){
     if(G.phase !== PHASES.PLAY || G.row <= 1) return;
     playSound(SFX_CASHOUT);
     document.getElementById('chooseDisp').style.display = 'none';
     const clearedRows = G.row - 1;
     G.won = Math.round(G.bet * multAtRow(currentMode, clearedRows));
-    balance += G.won;
+    await plSettleKong(G.won);
     G.phase = PHASES.RESULT;
     renderBalDisp();
     revealAllTraps(clearedRows);
