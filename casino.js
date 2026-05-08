@@ -203,17 +203,21 @@ class CasinoScene extends Phaser.Scene {
 
   loadUOSprites() {
     const body = manifest.bodies[spriteBody];
+    // If the manifest's filenames are already absolute URLs (live PL
+    // sprites from the bridge), use them directly. Otherwise prefix
+    // with the gh-pages "sprites/" folder.
+    const fullUrl = (f) => /^https?:\/\//i.test(f) ? f : `sprites/${f}`;
     for (let dir = 0; dir < 8; dir++) {
       const walkInfo = body.walk[dir];
       if (walkInfo) {
-        this.load.spritesheet(`walk_${dir}`, `sprites/${walkInfo.file}`, {
+        this.load.spritesheet(`walk_${dir}`, fullUrl(walkInfo.file), {
           frameWidth: walkInfo.frameWidth,
           frameHeight: walkInfo.frameHeight
         });
       }
       const standInfo = body.stand[dir];
       if (standInfo) {
-        this.load.image(`stand_${dir}`, `sprites/${standInfo.file}`);
+        this.load.image(`stand_${dir}`, fullUrl(standInfo.file));
       }
     }
     spritesLoaded = true;
@@ -1204,6 +1208,40 @@ async function startGame() {
       await new Promise(r => setTimeout(r, 50));
     }
     if (PL.character()) playerName = PL.character();
+  }
+
+  // If the PL bridge has live sprites for this character, prefer them
+  // over the static gh-pages manifest. The exporter writes a small
+  // manifest.json describing one body keyed "pl"; we merge it.
+  let liveLoaded = false;
+  if (window.PL && PL.spriteBase && PL.spriteBase()) {
+    try {
+      const baseUrl = PL.spriteBase();
+      const resp = await fetch(baseUrl + 'manifest.json?v=' + Date.now());
+      if (resp.ok) {
+        const liveManifest = await resp.json();
+        if (liveManifest && liveManifest.bodies && liveManifest.bodies.pl) {
+          // Rewrite each direction's "file" to the absolute live URL
+          // so Phaser fetches the spritesheet from the API tunnel.
+          const body = liveManifest.bodies.pl;
+          for (const pose of ['stand', 'walk']) {
+            if (!body[pose]) continue;
+            for (const dir in body[pose]) {
+              const slot = body[pose][dir];
+              if (slot && slot.file) slot.file = baseUrl + slot.file;
+            }
+          }
+          manifest = liveManifest;
+          spriteBody = 'pl';
+          liveLoaded = true;
+        }
+      }
+    } catch (e) {
+      // Fall through to the static manifest below.
+    }
+  }
+  if (liveLoaded) {
+    return; // Phaser will load via loadUOSprites() — manifest already set
   }
   try {
     const resp = await fetch('sprites/manifest.json?v=' + Date.now());

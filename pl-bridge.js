@@ -60,6 +60,7 @@
   let _buyIn        = 0;
   let _account      = '';
   let _character    = '';
+  let _spriteBase   = '';   // populated by /init — relative path like "/character-sprites/Akasha/"
   let _isClosed     = false;
   let _heartbeatTimer = null;
   let _balanceListeners = [];
@@ -305,9 +306,10 @@
     const tokenForInit = usingStash ? await mintToken(nextSeq()) : _initialToken;
 
     const data = await call('/api/casino/init', { token: tokenForInit });
-    _account   = data.account || '';
-    _character = data.character || '';
-    _buyIn     = Number(data.buyIn) || 0;
+    _account    = data.account || '';
+    _character  = data.character || '';
+    _spriteBase = data.spriteBase || '';
+    _buyIn      = Number(data.buyIn) || 0;
     setBalance(Number(data.balance) || 0);
 
     persistSession();
@@ -441,11 +443,18 @@
     end,
     pokerLaunch,
     onBalanceChanged(cb) { if (typeof cb === 'function') _balanceListeners.push(cb); },
-    balance:   () => _balance,
-    buyIn:     () => _buyIn,
-    account:   () => _account,
-    character: () => _character,
-    isClosed:  () => _isClosed,
+    balance:    () => _balance,
+    buyIn:      () => _buyIn,
+    account:    () => _account,
+    character:  () => _character,
+    isClosed:   () => _isClosed,
+    spriteBase: () => {
+      // Returns the full URL of the per-account sprite directory, or ''
+      // if not exported. Sprite base is relative to the API host (e.g.
+      // "/character-sprites/Akasha/"), so we prefix with the API base.
+      if (!_spriteBase) return '';
+      return resolveApiBase() + _spriteBase;
+    },
     fmtGold,
     errors: { PLBridgeError, PLInsufficientFunds, PLSessionClosed, PLNetworkError, PLNotInitialized },
   };
