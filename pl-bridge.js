@@ -209,6 +209,20 @@
   }
 
   // ────────────────────────────────────────────────────────────────────
+  // Per-tab call serializer — every API call queues behind the previous
+  // one's promise. Prevents the race where a heartbeat and an end()
+  // pick adjacent seq numbers but arrive at the server out of order.
+  // (The server now also has a sliding-window replay check, so this is
+  // belt-and-suspenders.)
+  // ────────────────────────────────────────────────────────────────────
+  let _callQueue = Promise.resolve();
+  function queue(fn) {
+    const next = _callQueue.then(fn, fn);
+    _callQueue = next.catch(() => {}); // don't break the chain on errors
+    return next;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
   // HTTP
   // ────────────────────────────────────────────────────────────────────
   async function call(path, body) {
@@ -301,62 +315,70 @@
     return { account: _account, character: _character, balance: _balance, buyIn: _buyIn };
   }
 
-  async function refreshBalance() {
-    const t = await mintToken(nextSeq());
-    const data = await call('/api/casino/balance', { token: t });
-    setBalance(Number(data.balance) || 0);
-    return _balance;
-  }
-
-  async function wager(gameId, amount, idempotencyKey) {
-    if (!Number.isFinite(amount) || amount <= 0)
-      throw new PLBridgeError('AmountOutOfRange', 'wager must be > 0');
-    const t = await mintToken(nextSeq());
-    const idem = idempotencyKey || newUuid();
-    const data = await call('/api/casino/wager', {
-      token: t, gameId: gameId || '', amount: Math.floor(amount), idempotencyKey: idem
-    });
-    setBalance(Number(data.balance) || 0);
-    return _balance;
-  }
-
-  async function settle(gameId, payout, idempotencyKey) {
-    if (!Number.isFinite(payout) || payout < 0)
-      throw new PLBridgeError('AmountOutOfRange', 'payout must be >= 0');
-    const t = await mintToken(nextSeq());
-    const idem = idempotencyKey || newUuid();
-    const data = await call('/api/casino/settle', {
-      token: t, gameId: gameId || '', payout: Math.floor(payout), idempotencyKey: idem
-    });
-    setBalance(Number(data.balance) || 0);
-    return _balance;
-  }
-
-  async function heartbeat() {
-    if (!_hmacKey || _isClosed) return;
-    try {
+  function refreshBalance() {
+    return queue(async () => {
       const t = await mintToken(nextSeq());
-      const data = await call('/api/casino/heartbeat', { token: t });
+      const data = await call('/api/casino/balance', { token: t });
       setBalance(Number(data.balance) || 0);
-    } catch (e) {
-      // Heartbeat errors are expected during transient blips; only
-      // SessionClosed propagates (and stops the heartbeat above).
-      if (e instanceof PLSessionClosed) throw e;
-    }
+      return _balance;
+    });
   }
 
-  async function end() {
-    if (_isClosed) return { deposited: 0 };
-    const t = await mintToken(nextSeq());
-    let data;
-    try {
-      data = await call('/api/casino/end', { token: t });
-    } finally {
-      _isClosed = true;
-      stopHeartbeat();
-      clearSession();
-    }
-    return { deposited: Number(data.deposited) || 0 };
+  function wager(gameId, amount, idempotencyKey) {
+    if (!Number.isFinite(amount) || amount <= 0)
+      return Promise.reject(new PLBridgeError('AmountOutOfRange', 'wager must be > 0'));
+    const idem = idempotencyKey || newUuid();
+    return queue(async () => {
+      const t = await mintToken(nextSeq());
+      const data = await call('/api/casino/wager', {
+        token: t, gameId: gameId || '', amount: Math.floor(amount), idempotencyKey: idem
+      });
+      setBalance(Number(data.balance) || 0);
+      return _balance;
+    });
+  }
+
+  function settle(gameId, payout, idempotencyKey) {
+    if (!Number.isFinite(payout) || payout < 0)
+      return Promise.reject(new PLBridgeError('AmountOutOfRange', 'payout must be >= 0'));
+    const idem = idempotencyKey || newUuid();
+    return queue(async () => {
+      const t = await mintToken(nextSeq());
+      const data = await call('/api/casino/settle', {
+        token: t, gameId: gameId || '', payout: Math.floor(payout), idempotencyKey: idem
+      });
+      setBalance(Number(data.balance) || 0);
+      return _balance;
+    });
+  }
+
+  function heartbeat() {
+    if (!_hmacKey || _isClosed) return Promise.resolve();
+    return queue(async () => {
+      try {
+        const t = await mintToken(nextSeq());
+        const data = await call('/api/casino/heartbeat', { token: t });
+        setBalance(Number(data.balance) || 0);
+      } catch (e) {
+        if (e instanceof PLSessionClosed) throw e;
+      }
+    });
+  }
+
+  function end() {
+    if (_isClosed) return Promise.resolve({ deposited: 0 });
+    return queue(async () => {
+      const t = await mintToken(nextSeq());
+      let data;
+      try {
+        data = await call('/api/casino/end', { token: t });
+      } finally {
+        _isClosed = true;
+        stopHeartbeat();
+        clearSession();
+      }
+      return { deposited: Number(data.deposited) || 0 };
+    });
   }
 
   function startHeartbeat() {

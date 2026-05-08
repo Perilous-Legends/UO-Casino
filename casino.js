@@ -47,13 +47,11 @@ const ZONES = [
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w: 94, h: 58, type: 'game',       url: './uth-test.html' },
   { id: 'kong',      label: "Dragon's Lair",        x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
-  // Slots2 uses an obfuscated third-party slot library — it can't be
-  // safely patched to use the PL bridge's authoritative-balance flow.
-  // Marked 'coming_soon' so players can't play it for free against an
-  // unlinked balance. Re-enable once slots2/main.js is replaced or the
-  // wager/settle calls are wrapped via the library's event hooks.
-  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'coming_soon' },
+  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/' },
   { id: 'scratch',   label: 'Lucky Scratch',        x: 449, y: 123, w:  85, h:  65, type: 'game',        url: './scratch.html' },
+  // Crash (Dragon's Flight) — placeholder position; reposition via D-key
+  // debug mode and COPY ALL to update.
+  { id: 'crash',     label: "Dragon's Flight",      x: 430, y: 670, w:  90, h:  90, type: 'game',        url: './crash.html' },
   { id: 'bar',       label: 'Bar',                  x: 480, y:  54, w: 705, h: 140, type: 'coming_soon' }
 ];
 
@@ -359,8 +357,19 @@ class CasinoScene extends Phaser.Scene {
     this.player.setDepth(10);
 
     for (const table of this.tableZones) {
-      this.physics.add.collider(this.player, table, () => {
-        this.moveTarget = null;
+      this.physics.add.collider(this.player, table, (player, t) => {
+        // Only clear moveTarget if the player is actively trying to walk
+        // INTO this table — i.e. their velocity points toward it. Without
+        // this check the callback fires every frame they're touching and
+        // wipes any new right-click target, trapping them against the
+        // edge.
+        if (!this.moveTarget) return;
+        const tdx = (t.x - player.x);
+        const tdy = (t.y - player.y);
+        const vx  = player.body.velocity.x;
+        const vy  = player.body.velocity.y;
+        const movingIntoTable = (tdx * vx + tdy * vy) > 0;
+        if (movingIntoTable) this.moveTarget = null;
       });
     }
 
