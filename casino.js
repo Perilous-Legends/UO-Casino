@@ -44,9 +44,11 @@ function angleTo8Dir(angleRad) {
 const ZONES = [
   { id: 'roulette',  label: 'Roulette',             x: 224, y: 295, w: 146, h:  53, type: 'game',        url: './roulette.html' },
   { id: 'blackjack1',label: 'Blackjack',            x: 214, y: 455, w: 105, h:  41, type: 'game',        url: './blackjack.html' },
-  // Multiplayer poker — externally hosted, opens in a new tab. Casino
-  // bridge does NOT cover this game (cash is on the external site).
-  { id: 'poker',     label: 'Poker',                x: 441, y: 393, w: 128, h:  80, type: 'external',    url: 'https://www.pm-demo.com/' },
+  // Multiplayer Holdem — Mike is building this in-house pre-launch so it
+  // can integrate with the PL casino bridge. Coming-soon placeholder
+  // until then. (Live deployment used to link to pm-demo.com but that
+  // site can't be wired to our wager/settle API.)
+  { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'coming_soon' },
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w:  94, h:  58, type: 'game',     url: './uth-test.html' },
   { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html' },
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
