@@ -381,6 +381,20 @@
     });
   }
 
+  // Hand off the player to Poker Mavens (multiplayer Holdem). The PL
+  // server carries the current session balance into Mavens as the
+  // player's chip stack, mints a session key, and returns the redirect
+  // URL. While the player is in the poker room the PL session is
+  // FROZEN — no wager/settle calls accepted — and balance updates
+  // arrive via Mavens callbacks.
+  function pokerLaunch() {
+    return queue(async () => {
+      const t = await mintToken(nextSeq());
+      const data = await call('/api/casino/poker-launch', { token: t });
+      return { url: data.url };
+    });
+  }
+
   function startHeartbeat() {
     stopHeartbeat();
     // Only the top-level frame heartbeats. Iframes share the same
@@ -425,6 +439,7 @@
     settle,
     heartbeat,
     end,
+    pokerLaunch,
     onBalanceChanged(cb) { if (typeof cb === 'function') _balanceListeners.push(cb); },
     balance:   () => _balance,
     buyIn:     () => _buyIn,

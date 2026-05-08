@@ -44,11 +44,13 @@ function angleTo8Dir(angleRad) {
 const ZONES = [
   { id: 'roulette',  label: 'Roulette',             x: 224, y: 295, w: 146, h:  53, type: 'game',        url: './roulette.html' },
   { id: 'blackjack1',label: 'Blackjack',            x: 214, y: 455, w: 105, h:  41, type: 'game',        url: './blackjack.html' },
-  // Multiplayer Holdem — Mike is building this in-house pre-launch so it
-  // can integrate with the PL casino bridge. Coming-soon placeholder
-  // until then. (Live deployment used to link to pm-demo.com but that
-  // site can't be wired to our wager/settle API.)
-  { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'coming_soon' },
+  // Multiplayer Holdem — Poker Mavens (Briggs Softworks) integration.
+  // Clicking calls PL.pokerLaunch() which carries the PL session
+  // balance into Mavens as the player's chip stack and returns a
+  // redirect URL. Mavens callbacks sync chip changes back to the PL
+  // session. Disabled until Mike configures the API/callback creds
+  // server-side via [PokerMavensConfigure.
+  { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'pl-poker' },
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w:  94, h:  58, type: 'game',     url: './uth-test.html' },
   { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html' },
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
@@ -1012,6 +1014,28 @@ class CasinoScene extends Phaser.Scene {
       // is on the external site. Players still need to manually return
       // to PL via the floor's Return-to-PL button.
       window.open(zone.url, '_blank', 'noopener');
+    } else if (zone.type === 'pl-poker') {
+      // Multiplayer Holdem via Poker Mavens partner integration.
+      // PL.pokerLaunch() carries the casino-session balance into the
+      // Mavens server as chip stack, mints a session key, and returns
+      // the redirect URL.
+      if (!window.PL || typeof PL.pokerLaunch !== 'function') {
+        const cs = document.getElementById('coming-soon');
+        document.getElementById('coming-soon-text').textContent =
+          'Multiplayer Holdem requires the PL casino bridge — buy in from a Casino Stone first.';
+        cs.classList.add('active');
+        modalOpen = true;
+        return;
+      }
+      PL.pokerLaunch().then(({ url }) => {
+        window.open(url, '_blank', 'noopener');
+      }).catch(err => {
+        const cs = document.getElementById('coming-soon');
+        document.getElementById('coming-soon-text').textContent =
+          'Multiplayer Holdem unavailable: ' + (err && err.message || err);
+        cs.classList.add('active');
+        modalOpen = true;
+      });
     } else {
       const cs = document.getElementById('coming-soon');
       document.getElementById('coming-soon-text').textContent =
