@@ -50,9 +50,9 @@ const ZONES = [
   // redirect URL. Mavens callbacks sync chip changes back to the PL
   // session. Disabled until Mike configures the API/callback creds
   // server-side via [PokerMavensConfigure.
-  { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'pl-poker' },
+  { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'pl-poker', placeholder: true },
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w:  94, h:  58, type: 'game',     url: './uth-test.html' },
-  { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html' },
+  { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html', placeholder: true },
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
   { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/' },
@@ -341,6 +341,24 @@ class CasinoScene extends Phaser.Scene {
       this.physics.add.existing(tableBody, true);
       tableBody.zoneData = zone;
       this.tableZones.push(tableBody);
+
+      // Zones without underlying art on casino-floor.jpg need a visible
+      // placeholder so players can find them. Mike can remove the
+      // `placeholder: true` flag once he paints them onto the floor.
+      if (zone.placeholder) {
+        const plate = this.add.rectangle(zone.x, zone.y, zone.w, zone.h, 0x222244, 0.55)
+          .setStrokeStyle(2, 0xffd700, 0.75)
+          .setDepth(1);
+        const label = this.add.text(zone.x, zone.y, zone.label, {
+          fontSize: '14px',
+          fontFamily: 'Georgia, serif',
+          color: '#ffd700',
+          stroke: '#000',
+          strokeThickness: 3,
+          align: 'center',
+          wordWrap: { width: zone.w - 6 }
+        }).setOrigin(0.5).setDepth(2);
+      }
     }
   }
 
