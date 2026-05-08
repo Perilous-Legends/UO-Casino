@@ -1240,10 +1240,7 @@ async function startGame() {
       // Fall through to the static manifest below.
     }
   }
-  if (liveLoaded) {
-    return; // Phaser will load via loadUOSprites() — manifest already set
-  }
-  try {
+  if (!liveLoaded) try {
     const resp = await fetch('sprites/manifest.json?v=' + Date.now());
     manifest = await resp.json();
     const nameLower = playerName.toLowerCase();
