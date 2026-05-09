@@ -159,7 +159,8 @@
   function buildUI() {
     const root = document.getElementById('slot-root');
     const ASSETS = 'assets/images/slot-machine/';
-    function imgBtn(id, base, extraClass) {
+    function imgBtn(id, base, extraClass, label) {
+      const inner = label ? `<span class="img-btn-label">${label}</span>` : '';
       return `<button class="img-btn ${extraClass||''}" id="${id}"
                        data-base="${base}"
                        style="background-image:url('${ASSETS}${base}.png');"
@@ -167,7 +168,7 @@
                        onmouseout="this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'.png)'"
                        onmousedown="if(!this.disabled)this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'-active.png)'"
                        onmouseup="if(!this.disabled)this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'-hover.png)'"
-              ></button>`;
+              >${inner}</button>`;
     }
     // Native frame is 1976 × 1080 (matches the original 1Stake layout).
     // Inside that frame, the reel canvas is 1400×600 centered, sitting
@@ -198,7 +199,7 @@
             <span class="hud-suffix">g</span>
           </div>
 
-          ${imgBtn('paytableBtn', 'btn_paytable')}
+          ${imgBtn('paytableBtn', 'btn_paytable', '', 'PAY TABLE')}
 
           <!-- BET / LINE -/+ -->
           <div class="bet-group">
@@ -208,7 +209,7 @@
             ${imgBtn('betPlus', 'btn_bet_plus')}
           </div>
 
-          ${imgBtn('maxBetBtn', 'btn_max')}
+          ${imgBtn('maxBetBtn', 'btn_max', '', 'MAX')}
 
           ${imgBtn('spinBtn', 'btn_spin', 'spin')}
 
