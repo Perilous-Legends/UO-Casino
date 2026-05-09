@@ -3,256 +3,431 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dragon's Flight - HoH Casino</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<title>Dragon Hunt - HoH Casino</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:#0a0e1a;
-  color:#ccc;
-  font-family:'Courier New',monospace;
-  display:flex;justify-content:center;align-items:center;
-  min-height:100vh;
-  overflow:hidden;
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:#05030a;
+  color:#f5e6c8;
+  font-family:'Cinzel',serif;
+  user-select:none;
 }
-#game-wrap{
-  width:800px;max-width:100vw;
-  background:linear-gradient(180deg,#0a0e1a 0%,#111827 40%,#0d1117 100%);
-  border:2px solid #ffd70066;
-  border-radius:8px;
-  box-shadow:0 0 30px rgba(255,215,0,0.15),inset 0 0 60px rgba(0,0,0,0.5);
+
+/* Whole game scaled to fit viewport while preserving aspect */
+#fit-wrap{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+}
+#stage{
   position:relative;
+  width:1280px;height:800px;
+  background:#000;
+  transform-origin:center center;
+}
+
+/* Volcano backdrop covers full stage */
+#bg-layer{
+  position:absolute;inset:0;
+  background:url('crash-assets/bg.png') center/cover no-repeat;
+  z-index:0;
+}
+#bg-vignette{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.55) 100%);
+  z-index:1;pointer-events:none;
+}
+
+/* Side panels — sidebar2 = left (HISTORY/Balance/Bet), sidebar3 = right (auto config) */
+.sidebar{
+  position:absolute;
+  width:280px;height:760px;
+  top:20px;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  z-index:5;
+  padding:80px 22px 26px 22px;
+  display:flex;flex-direction:column;
+  font-family:'Cinzel',serif;
+}
+#sidebar-left{ left:14px; background-image:url('crash-assets/sidebar2.png'); }
+#sidebar-right{ right:14px; background-image:url('crash-assets/sidebar3.png'); }
+.panel{
+  margin-bottom:14px;
+}
+.panel-label{
+  font-family:'Cinzel Decorative',serif;
+  font-size:13px;
+  letter-spacing:3px;
+  color:#ffd28a;
+  text-shadow:0 0 6px rgba(255,200,80,0.5);
+  text-transform:uppercase;
+  margin-bottom:6px;
+  text-align:center;
+}
+.panel-value{
+  font-size:18px;color:#ffe9b3;text-align:center;
+  text-shadow:0 0 8px rgba(255,200,80,0.4);
+  font-weight:700;
+}
+.panel-value strong{ color:#ffd700; font-size:22px; }
+.history-strip{
+  display:flex;flex-wrap:wrap;gap:4px;justify-content:center;
+  min-height:42px;
+}
+.history-item{
+  font-size:11px;font-weight:bold;padding:2px 6px;border-radius:3px;
+  background:rgba(0,0,0,0.55);border:1px solid rgba(255,215,0,0.18);
+}
+.history-item.red    { color:#ff6464; }
+.history-item.yellow { color:#ffcc00; }
+.history-item.green  { color:#5eff8a; }
+.auto-input{
+  width:100%;padding:6px 8px;text-align:center;
+  background:rgba(0,0,0,0.55);
+  border:1px solid rgba(255,200,80,0.4);
+  color:#ffe9b3;font-family:'Cinzel',serif;font-size:16px;
+  border-radius:3px;outline:none;
+}
+.auto-toggle{
+  width:100%;padding:6px;text-align:center;cursor:pointer;
+  background:rgba(0,0,0,0.55);
+  border:1px solid rgba(255,200,80,0.4);
+  color:#ffe9b3;font-family:'Cinzel',serif;font-size:14px;
+  border-radius:3px;letter-spacing:2px;
+}
+.auto-toggle.on{
+  background:rgba(255,200,80,0.18);
+  color:#ffd700;border-color:#ffd700;
+  box-shadow:0 0 10px rgba(255,200,80,0.4);
+}
+
+/* Central play area, framed by border.png */
+#play-frame{
+  position:absolute;
+  left:300px;top:30px;
+  width:680px;height:540px;
+  z-index:3;
+  background-image:url('crash-assets/border.png');
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  pointer-events:none;
+}
+#play-area{
+  position:absolute;
+  left:332px;top:62px;       /* inside the border frame */
+  width:616px;height:476px;
+  z-index:2;
   overflow:hidden;
 }
-/* stone texture overlay */
-#game-wrap::before{
-  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-  background:repeating-conic-gradient(rgba(255,255,255,0.01) 0% 25%,transparent 0% 50%) 0 0/40px 40px;
-  pointer-events:none;z-index:0;
-}
-#game-wrap>*{position:relative;z-index:1;}
 
-/* TOP BAR */
-.top-bar{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 12px;
-  background:rgba(15,20,35,0.95);
-  border-bottom:1px solid #ffd70033;
-}
-.history{display:flex;gap:5px;flex-wrap:wrap;flex:1;}
-.history-item{
-  font-size:12px;font-weight:bold;padding:2px 7px;border-radius:4px;
-  background:rgba(0,0,0,0.4);
-}
-.history-item.red{color:#ff3333;}
-.history-item.yellow{color:#ffcc00;}
-.history-item.green{color:#44ff88;}
-.bal-display{
-  font-family:'Cinzel',serif;color:#ffd700;font-size:14px;white-space:nowrap;margin-left:10px;
-}
-.bal-display strong{font-size:16px;}
-
-/* CANVAS */
-#flight-canvas{
-  display:block;width:100%;height:380px;
-  background:transparent;
+/* Harpoon platform anchors at the bottom-left of the play area */
+#platform{
+  position:absolute;
+  left:8px;bottom:0;
+  width:152px;height:319px;     /* 500x1050 scaled to ~30% */
+  background:url('crash-assets/platform.png') center bottom/100% 100% no-repeat;
+  z-index:6;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.7));
 }
 
-/* MULTIPLIER OVERLAY */
+/* Dragon sprite — animated via JS */
+#dragon{
+  position:absolute;
+  width:130px;height:88px;
+  z-index:7;
+  pointer-events:none;
+  transition:filter 0.2s;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+}
+#dragon.crashed{
+  filter:drop-shadow(0 0 18px rgba(220,40,40,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+}
+
+/* Harpoon projectile (visible only briefly during crash) */
+#harpoon{
+  position:absolute;
+  width:84px;height:43px;       /* 421x215 scaled */
+  background:url('crash-assets/harpoon.png') center/contain no-repeat;
+  z-index:8;
+  display:none;
+  pointer-events:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+
+/* Multiplier overlay — top-center of play area */
 #mult-overlay{
-  position:absolute;top:80px;left:0;right:0;
-  text-align:center;pointer-events:none;
-  font-family:'Cinzel',serif;font-size:72px;font-weight:900;
+  position:absolute;
+  top:30px;left:50%;
+  transform:translateX(-50%);
+  font-family:'Cinzel Decorative',serif;
+  font-size:64px;font-weight:900;
   color:#ffd700;
-  text-shadow:0 0 20px rgba(255,215,0,0.6),0 0 40px rgba(255,215,0,0.3);
-  transition:color 0.1s;
-  z-index:10;
+  text-shadow:
+    0 0 20px rgba(255,200,80,0.7),
+    0 0 40px rgba(255,140,40,0.5),
+    0 4px 4px rgba(0,0,0,0.9);
+  z-index:9;
+  letter-spacing:2px;
+  pointer-events:none;
 }
 #mult-overlay.crashed{
-  color:#ff3333;
-  text-shadow:0 0 20px rgba(255,0,0,0.6),0 0 40px rgba(255,0,0,0.3);
+  color:#ff4040;
+  text-shadow:
+    0 0 22px rgba(255,60,60,0.8),
+    0 0 44px rgba(255,0,0,0.4),
+    0 4px 4px rgba(0,0,0,0.9);
 }
 
-/* RESULT OVERLAY */
-#result-overlay{
-  position:absolute;top:180px;left:0;right:0;
-  text-align:center;pointer-events:none;
-  font-family:'Cinzel',serif;font-size:36px;font-weight:700;
-  opacity:0;transition:opacity 0.3s;
-  z-index:11;
-}
-#result-overlay.show{opacity:1;}
-#result-overlay.win{color:#44ff88;text-shadow:0 0 15px rgba(68,255,136,0.5);}
-#result-overlay.lose{color:#ff3333;text-shadow:0 0 15px rgba(255,51,51,0.5);}
-
-/* PHASE LABEL */
+/* Phase label — below multiplier */
 #phase-label{
-  position:absolute;top:50px;left:0;right:0;
-  text-align:center;pointer-events:none;
-  font-family:'Cinzel',serif;font-size:18px;
-  color:#aaa;opacity:0.7;
-  z-index:10;
+  position:absolute;
+  top:108px;left:50%;
+  transform:translateX(-50%);
+  font-family:'Cinzel',serif;
+  font-size:16px;letter-spacing:5px;
+  color:#ffe9b3;
+  text-shadow:0 0 8px rgba(0,0,0,0.9);
+  z-index:9;
+  text-transform:uppercase;
+  pointer-events:none;
+  opacity:0.8;
 }
 
-/* BOTTOM PANEL */
-.bottom-panel{
-  background:rgba(15,20,35,0.95);
-  border-top:1px solid #ffd70033;
-  padding:10px 12px;
+/* Result overlay (WIN / BUST) */
+#result-overlay{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Cinzel Decorative',serif;
+  font-size:54px;font-weight:900;
+  z-index:10;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.25s, transform 0.25s;
+  letter-spacing:6px;
 }
+#result-overlay.show{ opacity:1; transform:translate(-50%,-58%) scale(1.05); }
+#result-overlay.win{
+  color:#5eff8a;
+  text-shadow:0 0 20px rgba(94,255,138,0.8),0 4px 4px rgba(0,0,0,0.9);
+}
+#result-overlay.lose{
+  color:#ff4040;
+  text-shadow:0 0 20px rgba(255,64,64,0.8),0 4px 4px rgba(0,0,0,0.9);
+}
+
+/* Bottom controls strip */
+#bottom-bar{
+  position:absolute;
+  left:300px;right:300px;
+  bottom:14px;
+  height:200px;
+  z-index:5;
+  padding:14px 20px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%);
+  border:1px solid rgba(255,200,80,0.3);
+  border-radius:6px;
+  box-shadow:inset 0 0 30px rgba(0,0,0,0.6);
+}
+
 .chips-row{
-  display:flex;justify-content:center;gap:6px;margin-bottom:8px;
+  display:flex;justify-content:center;gap:14px;
 }
 .chip-btn{
-  background:none;border:2px solid transparent;border-radius:50%;
-  cursor:pointer;padding:2px;transition:all 0.15s;
-  width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+  width:62px;height:62px;border-radius:50%;
+  border:3px solid rgba(255,200,80,0.4);
+  cursor:pointer;background:none;padding:0;
+  transition:transform 0.12s,border-color 0.15s,box-shadow 0.15s;
+  -webkit-tap-highlight-color:transparent;
 }
-.chip-btn img{width:48px;height:48px;border-radius:50%;pointer-events:none;}
-.chip-btn:hover{transform:scale(1.1);border-color:#ffd70066;}
-.chip-btn.selected{border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.4);}
+.chip-btn img{
+  width:100%;height:100%;border-radius:50%;
+  pointer-events:none;display:block;
+}
+.chip-btn:hover{
+  transform:scale(1.08);
+  border-color:rgba(255,215,0,0.7);
+  box-shadow:0 0 12px rgba(255,200,80,0.5);
+}
+.chip-btn.selected{
+  border-color:#ffd700;
+  box-shadow:0 0 14px rgba(255,215,0,0.7);
+}
 
 .controls-row{
-  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.btn{
+  padding:10px 20px;
+  background:linear-gradient(135deg,#3a1a06 0%,#5a2c0a 100%);
+  color:#ffd28a;
+  border:2px solid #8a5a1a;
+  border-radius:5px;
+  font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:2px;
+  cursor:pointer;
+  transition:transform 0.1s,filter 0.15s;
+  text-transform:uppercase;
+}
+.btn:hover:not(:disabled){ filter:brightness(1.25); transform:translateY(-1px); }
+.btn:disabled{ opacity:0.35; cursor:not-allowed; }
+.btn-bet{
+  background:linear-gradient(135deg,#1a4a1a 0%,#2a7a2a 100%);
+  border-color:#4aff7a;color:#ddffe1;font-size:18px;padding:14px 28px;
+}
+.btn-cashout{
+  background:linear-gradient(135deg,#7a4a00 0%,#c08020 100%);
+  border-color:#ffd700;color:#fff;font-size:18px;padding:14px 28px;
+  animation:pulseGold 0.8s ease-in-out infinite;
+}
+@keyframes pulseGold{
+  0%,100%{ box-shadow:0 0 8px rgba(255,215,0,0.5); }
+  50%    { box-shadow:0 0 22px rgba(255,215,0,0.95); }
 }
 .bet-display{
-  font-family:'Cinzel',serif;color:#ffd700;font-size:16px;min-width:120px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;
+  padding:6px 18px;
+  border:1px solid rgba(255,200,80,0.4);
+  background:rgba(0,0,0,0.55);
+  border-radius:4px;
+  min-width:120px;
 }
-.bet-display small{color:#aaa;font-size:11px;display:block;}
+.bet-display small{ font-size:11px;letter-spacing:3px;color:#cfa15a; }
+.bet-display span{ font-size:22px;font-weight:bold;color:#ffd700;text-shadow:0 0 10px rgba(255,200,80,0.5); }
 
-.auto-cashout-wrap{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-}
-.auto-cashout-wrap label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;}
-.auto-cashout-wrap input{
-  width:70px;text-align:center;
-  background:rgba(0,0,0,0.5);border:1px solid #ffd70044;
-  color:#ffd700;font-family:monospace;font-size:14px;
-  padding:4px;border-radius:4px;outline:none;
-}
-.auto-cashout-wrap input:focus{border-color:#ffd700;}
-#auto-label{font-size:10px;color:#888;height:14px;}
-
-#btn-bet,#btn-cashout{
-  font-family:'Cinzel',serif;font-size:16px;font-weight:700;
-  padding:10px 28px;border:none;border-radius:6px;cursor:pointer;
-  text-transform:uppercase;letter-spacing:1px;
-  transition:all 0.15s;
-}
-#btn-bet{
-  background:linear-gradient(180deg,#ffd700,#b8960f);color:#0a0e1a;
-}
-#btn-bet:hover:not(:disabled){transform:scale(1.05);box-shadow:0 0 15px rgba(255,215,0,0.4);}
-#btn-bet:disabled{opacity:0.3;cursor:default;transform:none;}
-
-#btn-cashout{
-  background:linear-gradient(180deg,#44ff88,#22aa55);color:#0a0e1a;
-  display:none;
-}
-#btn-cashout:hover:not(:disabled){transform:scale(1.05);}
-#btn-cashout:disabled{opacity:0.3;cursor:default;transform:none;}
-#btn-cashout.active{
-  display:inline-block;
-  animation:pulseGreen 0.8s ease-in-out infinite;
-}
-@keyframes pulseGreen{
-  0%,100%{box-shadow:0 0 8px rgba(68,255,136,0.3);}
-  50%{box-shadow:0 0 20px rgba(68,255,136,0.6);}
+/* Mute button — top-right corner */
+#mute-btn{
+  position:absolute;top:20px;right:24px;z-index:50;
+  background:rgba(0,0,0,0.6);border:1px solid rgba(255,200,80,0.4);
+  color:#ffd28a;font-size:18px;padding:5px 10px;border-radius:5px;cursor:pointer;
+  font-family:'Cinzel',serif;
 }
 
-#btn-clear{
-  background:rgba(255,50,50,0.2);border:1px solid #ff333366;
-  color:#ff6666;font-size:12px;padding:6px 12px;border-radius:4px;cursor:pointer;
-  font-family:monospace;
+/* PL banner */
+#pl-banner{
+  position:fixed;top:0;left:0;right:0;z-index:9998;
+  background:#a30000;color:#fff;text-align:center;padding:9px;
+  font-family:sans-serif;font-size:14px;display:none;
 }
-#btn-clear:hover{background:rgba(255,50,50,0.35);}
-
-/* MUTE BTN */
-#muteBtn{
-  position:absolute;top:8px;right:10px;z-index:999;
-  background:rgba(0,0,0,0.6);border:1px solid #4aff7a44;
-  color:#ffd700;font-size:18px;padding:4px 9px;border-radius:6px;
-  cursor:pointer;line-height:1;
-}
-
-/* SCREEN FLASH */
-#screen-flash{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  background:rgba(255,0,0,0.3);opacity:0;pointer-events:none;
-  transition:opacity 0.1s;z-index:20;
-}
-#screen-flash.flash{opacity:1;}
 </style>
 </head>
 <body>
-<div id="pl-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#a30000;color:#fff;text-align:center;padding:9px;font-family:sans-serif;font-size:14px;display:none;"></div>
-<script src="pl-bridge.js?v=20260508a"></script>
-<div id="game-wrap">
-  <button id="muteBtn" onclick="toggleMute()" title="Toggle music">&#x1f50a;</button>
-  <audio id="bgMusic" loop src="./bg-music.mp3"></audio>
-  <div id="screen-flash"></div>
+<div id="pl-banner"></div>
+<script src="pl-bridge.js?v=20260509a"></script>
 
-  <!-- TOP BAR -->
-  <div class="top-bar">
-    <div class="history" id="history"></div>
-    <div class="bal-display">Bank: <strong id="balance">…</strong>g</div>
-  </div>
+<div id="fit-wrap">
+  <div id="stage">
+    <div id="bg-layer"></div>
+    <div id="bg-vignette"></div>
 
-  <!-- CANVAS AREA -->
-  <div style="position:relative;">
-    <canvas id="flight-canvas" width="800" height="380"></canvas>
-    <div id="phase-label">PLACE YOUR BETS</div>
-    <div id="mult-overlay">1.00x</div>
-    <div id="result-overlay"></div>
-  </div>
+    <button id="mute-btn" onclick="toggleMute()" title="Toggle music">&#x1f50a;</button>
+    <audio id="bgMusic" loop src="./bg-music.mp3"></audio>
+    <audio id="sndFlap"  loop src="crash-assets/flap.mp3"></audio>
+    <audio id="sndArrow"      src="crash-assets/arrow.mp3"></audio>
+    <audio id="sndDead"       src="crash-assets/dead.mp3"></audio>
 
-  <!-- BOTTOM PANEL -->
-  <div class="bottom-panel">
-    <div class="chips-row">
-      <div class="chip-btn" id="chip-100" onclick="selectChip(100)"><img src="chip-100.png" alt="100"></div>
-      <div class="chip-btn" id="chip-500" onclick="selectChip(500)"><img src="chip-500.png" alt="500"></div>
-      <div class="chip-btn" id="chip-1000" onclick="selectChip(1000)"><img src="chip-1000.png" alt="1K"></div>
-      <div class="chip-btn" id="chip-5000" onclick="selectChip(5000)"><img src="chip-5000.png" alt="5K"></div>
-      <div class="chip-btn" id="chip-10000" onclick="selectChip(10000)"><img src="chip-10000.png" alt="10K"></div>
+    <!-- Left sidebar: history + bank + current bet -->
+    <aside id="sidebar-left" class="sidebar">
+      <div class="panel">
+        <div class="panel-label">History</div>
+        <div class="history-strip" id="history"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Balance</div>
+        <div class="panel-value"><strong id="balance">…</strong>g</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Current Bet</div>
+        <div class="panel-value"><strong id="bet-amount">0</strong>g</div>
+      </div>
+    </aside>
+
+    <!-- Right sidebar: auto bet + auto cashout -->
+    <aside id="sidebar-right" class="sidebar">
+      <div class="panel">
+        <div class="panel-label">Auto Bet</div>
+        <button class="auto-toggle" id="auto-bet-toggle" onclick="toggleAutoBet()">OFF</button>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Auto Cashout</div>
+        <input class="auto-input" type="text" id="auto-cashout" value="2.00" maxlength="6">
+        <div style="text-align:center;font-size:10px;color:#cfa15a;margin-top:4px;letter-spacing:2px;">multiplier x</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Last Win</div>
+        <div class="panel-value"><strong id="last-win">0</strong>g</div>
+      </div>
+    </aside>
+
+    <!-- Central play area -->
+    <div id="play-area">
+      <div id="platform"></div>
+      <img id="dragon" src="sprites/dragon/fly/dragon_fly_00.png" alt="dragon">
+      <div id="harpoon"></div>
+      <div id="mult-overlay">1.00x</div>
+      <div id="phase-label">Place Your Bets</div>
+      <div id="result-overlay"></div>
     </div>
-    <div class="controls-row">
-      <button id="btn-clear" onclick="clearBet()">CLR</button>
-      <div class="bet-display">
-        <small>BET</small>
-        <span id="bet-amount">0</span>g
+    <div id="play-frame"></div>
+
+    <!-- Bottom controls -->
+    <div id="bottom-bar">
+      <div class="chips-row">
+        <button class="chip-btn" id="chip-100"   onclick="selectChip(100)"  ><img src="chip-100.png"   alt="100"></button>
+        <button class="chip-btn" id="chip-500"   onclick="selectChip(500)"  ><img src="chip-500.png"   alt="500"></button>
+        <button class="chip-btn" id="chip-1000"  onclick="selectChip(1000)" ><img src="chip-1000.png"  alt="1K"></button>
+        <button class="chip-btn" id="chip-5000"  onclick="selectChip(5000)" ><img src="chip-5000.png"  alt="5K"></button>
+        <button class="chip-btn" id="chip-10000" onclick="selectChip(10000)"><img src="chip-10000.png" alt="10K"></button>
       </div>
-      <div class="auto-cashout-wrap">
-        <label>Auto Cashout</label>
-        <input type="text" id="auto-cashout" value="2.00" maxlength="6">
-        <span id="auto-label"></span>
+      <div class="controls-row">
+        <button class="btn" id="btn-clear" onclick="clearBet()">Clear</button>
+        <div class="bet-display">
+          <small>BET</small>
+          <span id="bet-display">0g</span>
+        </div>
+        <button class="btn btn-bet"     id="btn-bet"     onclick="placeBet()">Bet</button>
+        <button class="btn btn-cashout" id="btn-cashout" onclick="cashOut()" style="display:none;">Cash Out</button>
       </div>
-      <button id="btn-bet" onclick="placeBet()">BET</button>
-      <button id="btn-cashout" onclick="cashOut()">CASH OUT</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ── GLOBALS ── */
+/* ───────── FIT-TO-VIEWPORT ───────── */
+function fitStage(){
+  const stage = document.getElementById('stage');
+  const sx = window.innerWidth  / 1280;
+  const sy = window.innerHeight / 800;
+  const s  = Math.min(sx, sy);
+  stage.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitStage);
+fitStage();
+
+/* ───────── PL BRIDGE ───────── */
 let balance = 0;
-// PL bridge bootstrap — must run before placeBet/cashOut.
+let bridgeReady = false;
 (async function(){
   const banner = document.getElementById('pl-banner');
   function showBanner(msg){ banner.textContent = msg; banner.style.display = 'block'; }
-  try {
+  if(!window.PL){ showBanner('PL bridge not loaded.'); return; }
+  try{
     const info = await PL.init();
     balance = info.balance;
-    PL.onBalanceChanged((b)=>{ balance = b; if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay(); });
-    if (typeof updateBalanceDisplay === 'function') updateBalanceDisplay();
-  } catch (e) {
+    bridgeReady = true;
+    PL.onBalanceChanged((b)=>{ balance = b; updateBalanceDisplay(); });
+    updateBalanceDisplay();
+  }catch(e){
     showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
   }
 })();
 async function plWagerCrash(amount){
-  try { await PL.wager('crash', amount); return true; }
-  catch (e) {
+  try{ await PL.wager('crash', amount); return true; }
+  catch(e){
     const banner = document.getElementById('pl-banner');
-    if (e instanceof PL.errors.PLInsufficientFunds) {
+    if(e instanceof PL.errors.PLInsufficientFunds){
       banner.textContent = 'Insufficient bank — bet rejected.';
       banner.style.display = 'block';
       setTimeout(()=>{ banner.style.display='none'; }, 2500);
@@ -261,149 +436,101 @@ async function plWagerCrash(amount){
   }
 }
 async function plSettleCrash(amount){
-  if (amount <= 0) return;
-  try { await PL.settle('crash', amount); }
-  catch (e) { console.error('crash settle failed', e); }
+  if(amount <= 0) return;
+  try{ await PL.settle('crash', amount); }
+  catch(e){ console.error('crash settle failed', e); }
 }
+
+/* ───────── STATE ───────── */
+const PHASE = { BETTING:0, FLYING:1, CRASHED:2 };
+let phase = PHASE.BETTING;
+
 let currentBet = 0;
 let selectedChip = null;
+let autoBet = false;
+let lastWin = 0;
 let crashHistory = [];
 
-const PHASE = { BETTING: 0, FLYING: 1, CRASHED: 2 };
-let phase = PHASE.BETTING;
-let tick = 0;
 let multiplier = 1.0;
 let crashPoint = 1.0;
 let cashedOut = false;
 let cashoutMult = 0;
-let bettingTimer = 0;
 let betPlaced = false;
+let lastBetAmount = 0;
+let lastChipSelected = null;
 
-/* ── DOM REFS ── */
-const canvas = document.getElementById('flight-canvas');
-const ctx = canvas.getContext('2d');
-const multOverlay = document.getElementById('mult-overlay');
-const resultOverlay = document.getElementById('result-overlay');
-const phaseLabel = document.getElementById('phase-label');
-const balanceEl = document.getElementById('balance');
-const betAmountEl = document.getElementById('bet-amount');
-const btnBet = document.getElementById('btn-bet');
+/* Dragon position state */
+const PLAY_W = 616, PLAY_H = 476;
+const DRAGON_W = 130, DRAGON_H = 88;
+const DRAGON_START_X = 156;     // just right of platform top
+const DRAGON_END_X   = PLAY_W - DRAGON_W - 20;
+const DRAGON_Y_BASE  = 180;
+let dragonX = DRAGON_START_X;
+let dragonY = DRAGON_Y_BASE;
+let dragonRotation = 0;
+let dragonFrame = 0;
+let dragonAnimTimer = 0;
+const DRAGON_ANIM_MS = 110;
+
+/* Harpoon state */
+let harpoonActive = false;
+let harpoonStartX = 0, harpoonStartY = 0;
+let harpoonTargetX = 0, harpoonTargetY = 0;
+let harpoonProgress = 0;
+let harpoonHit = false;
+
+/* Crash anim */
+let crashFallTime = 0;
+
+/* ───────── DOM REFS ───────── */
+const dragonEl   = document.getElementById('dragon');
+const harpoonEl  = document.getElementById('harpoon');
+const multEl     = document.getElementById('mult-overlay');
+const phaseEl    = document.getElementById('phase-label');
+const resultEl   = document.getElementById('result-overlay');
+const balanceEl  = document.getElementById('balance');
+const betDispEl  = document.getElementById('bet-display');
+const betAmtEl   = document.getElementById('bet-amount');
+const lastWinEl  = document.getElementById('last-win');
+const btnBet     = document.getElementById('btn-bet');
 const btnCashout = document.getElementById('btn-cashout');
-const autoCashoutInput = document.getElementById('auto-cashout');
-const autoLabel = document.getElementById('auto-label');
-const historyEl = document.getElementById('history');
-const screenFlash = document.getElementById('screen-flash');
+const historyEl  = document.getElementById('history');
+const acInput    = document.getElementById('auto-cashout');
+const sndFlap    = document.getElementById('sndFlap');
+const sndArrow   = document.getElementById('sndArrow');
+const sndDead    = document.getElementById('sndDead');
+const bgMusic    = document.getElementById('bgMusic');
+bgMusic.volume = 0.4;
+sndFlap.volume = 0.55;
 
-/* ── AUDIO ── */
-const bgMusic = document.getElementById('bgMusic');
-bgMusic.volume = 0.45;
+/* ───────── AUDIO ───────── */
 let _muted = false;
 function toggleMute(){
   _muted = !_muted;
   bgMusic.muted = _muted;
-  document.getElementById('muteBtn').innerHTML = _muted ? '&#x1f507;' : '&#x1f50a;';
+  sndFlap.muted = _muted;
+  sndArrow.muted = _muted;
+  sndDead.muted = _muted;
+  document.getElementById('mute-btn').innerHTML = _muted ? '&#x1f507;' : '&#x1f50a;';
 }
-function startMusic(){ bgMusic.play().catch(()=>{}); }
-document.addEventListener('pointerdown', startMusic, {once:true});
-document.addEventListener('keydown', startMusic, {once:true});
+function startAudio(){
+  bgMusic.play().catch(()=>{});
+}
+document.addEventListener('pointerdown', startAudio, {once:true});
+document.addEventListener('keydown',     startAudio, {once:true});
 
-/* ── DRAGON SPRITES ── */
+/* ───────── DRAGON SPRITES ───────── */
 const flyFrames = [];
-let crashImg = new Image();
-crashImg.src = 'sprites/dragon/fly/dragon_crash.png';
 for(let i = 0; i < 5; i++){
   const img = new Image();
   img.src = `sprites/dragon/fly/dragon_fly_0${i}.png`;
   flyFrames.push(img);
 }
-let dragonFrame = 0;
-let dragonAnimTimer = 0;
-const DRAGON_ANIM_MS = 120;
+const deadImg = new Image();
+deadImg.src = 'sprites/dragon/fly/dragon_dead.png';
 
-/* ── PARTICLES ── */
-let particles = [];
-function spawnParticles(count, type){
-  for(let i = 0; i < count; i++){
-    if(type === 'ember'){
-      particles.push({
-        x: Math.random() * 800,
-        y: 380 + Math.random() * 40,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -(0.3 + Math.random() * 0.6),
-        life: 200 + Math.random() * 300,
-        maxLife: 0,
-        size: 1.5 + Math.random() * 2.5,
-        color: Math.random() > 0.5 ? '#ffd700' : '#ff9900',
-        type: 'ember'
-      });
-      particles[particles.length-1].maxLife = particles[particles.length-1].life;
-    } else if(type === 'crash'){
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 4;
-      particles.push({
-        x: 400, y: 190,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 40 + Math.random() * 30,
-        maxLife: 0,
-        size: 2 + Math.random() * 3,
-        color: '#ff3333',
-        type: 'crash'
-      });
-      particles[particles.length-1].maxLife = particles[particles.length-1].life;
-    }
-  }
-}
-// Initial embers
-spawnParticles(40, 'ember');
-
-function updateParticles(dt){
-  const speedMult = multiplier > 5 ? 2.0 : 1.0;
-  for(let i = particles.length - 1; i >= 0; i--){
-    const p = particles[i];
-    p.x += p.vx * speedMult;
-    p.y += p.vy * speedMult;
-    p.life--;
-    if(p.life <= 0){
-      particles.splice(i, 1);
-      // Respawn embers
-      if(p.type === 'ember') spawnParticles(1, 'ember');
-    }
-  }
-  // Add more embers when multiplier > 5
-  if(phase === PHASE.FLYING && multiplier > 5 && particles.filter(p=>p.type==='ember').length < 70){
-    spawnParticles(2, 'ember');
-  }
-}
-
-function drawParticles(){
-  for(const p of particles){
-    const alpha = Math.min(1, p.life / (p.maxLife * 0.3));
-    ctx.globalAlpha = alpha * 0.7;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-}
-
-/* ── BEZIER PATH ── */
-const PATH_START = {x: 80, y: 320};
-const PATH_CTRL = {x: 200, y: 50};
-const PATH_END = {x: 520, y: 80};
-
-function bezierPoint(t){
-  const u = 1 - t;
-  return {
-    x: u*u*PATH_START.x + 2*u*t*PATH_CTRL.x + t*t*PATH_END.x,
-    y: u*u*PATH_START.y + 2*u*t*PATH_CTRL.y + t*t*PATH_END.y
-  };
-}
-
-/* ── CRASH POINT GENERATION ── */
+/* ───────── CRASH POINT GEN (4% house edge) ───────── */
 function generateCrashPoint(){
-  // House edge 4%
   let r = Math.random();
   let cp = -1 / Math.log(r) * 0.96;
   while(cp < 1.0){
@@ -413,70 +540,67 @@ function generateCrashPoint(){
   return cp;
 }
 
-/* ── CHIP SELECTION ── */
+/* ───────── CHIP HANDLING ───────── */
 function selectChip(val){
+  if(phase !== PHASE.BETTING || betPlaced) return;
   selectedChip = val;
   document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
   const el = document.getElementById('chip-' + val);
   if(el) el.classList.add('selected');
-  addToBet();
+  if(currentBet + val <= balance){
+    currentBet += val;
+    updateBetDisplay();
+  }
 }
-
-function addToBet(){
-  if(phase !== PHASE.BETTING || !selectedChip) return;
-  if(currentBet + selectedChip > balance) return;
-  currentBet += selectedChip;
-  updateBetDisplay();
-}
-
 function clearBet(){
-  if(phase !== PHASE.BETTING) return;
+  if(phase !== PHASE.BETTING || betPlaced) return;
   currentBet = 0;
   selectedChip = null;
   document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
   updateBetDisplay();
 }
-
 function updateBetDisplay(){
-  betAmountEl.textContent = currentBet.toLocaleString();
+  betDispEl.textContent = currentBet.toLocaleString() + 'g';
+  betAmtEl.textContent  = currentBet.toLocaleString();
 }
-
 function updateBalanceDisplay(){
   balanceEl.textContent = balance.toLocaleString();
 }
 
-/* ── BET / CASHOUT ── */
+/* ───────── BET / CASHOUT ───────── */
 function placeBet(){
   if(phase !== PHASE.BETTING || currentBet <= 0) return;
   betPlaced = true;
   btnBet.disabled = true;
-  // Update auto label
-  const acVal = parseFloat(autoCashoutInput.value);
-  if(!isNaN(acVal) && acVal > 1){
-    autoLabel.textContent = `AUTO CASHOUT at ${acVal.toFixed(2)}x`;
-  } else {
-    autoLabel.textContent = '';
-  }
+  lastBetAmount = currentBet;
+  lastChipSelected = selectedChip;
 }
-
 async function cashOut(){
   if(phase !== PHASE.FLYING || cashedOut || !betPlaced) return;
   cashedOut = true;
   cashoutMult = multiplier;
   const winnings = Math.floor(currentBet * cashoutMult);
   await plSettleCrash(winnings);
-  showResult(true, winnings - currentBet);
-  btnCashout.classList.remove('active');
-  btnCashout.disabled = true;
+  lastWin = winnings;
+  lastWinEl.textContent = winnings.toLocaleString();
+  showResult(true, 'cash out ' + cashoutMult.toFixed(2) + 'x  +' + winnings.toLocaleString() + 'g');
+  btnCashout.style.display = 'none';
 }
 
-/* ── HISTORY ── */
+/* ───────── AUTO BET ───────── */
+function toggleAutoBet(){
+  autoBet = !autoBet;
+  const t = document.getElementById('auto-bet-toggle');
+  t.textContent = autoBet ? 'ON' : 'OFF';
+  t.classList.toggle('on', autoBet);
+}
+
+/* ───────── HISTORY ───────── */
 function addHistory(val){
   crashHistory.unshift(val);
-  if(crashHistory.length > 10) crashHistory.pop();
+  if(crashHistory.length > 12) crashHistory.pop();
   renderHistory();
 }
-
 function renderHistory(){
   historyEl.innerHTML = '';
   for(const v of crashHistory){
@@ -485,264 +609,228 @@ function renderHistory(){
   }
 }
 
-/* ── RESULT OVERLAY ── */
-function showResult(win, amount){
-  resultOverlay.className = 'show ' + (win ? 'win' : 'lose');
-  if(win){
-    resultOverlay.textContent = `WIN: +${amount.toLocaleString()}g`;
-  } else {
-    resultOverlay.textContent = 'BUST';
+/* ───────── RESULT OVERLAY ───────── */
+function showResult(win, text){
+  resultEl.textContent = text;
+  resultEl.className = 'show ' + (win ? 'win' : 'lose');
+  setTimeout(() => { resultEl.className = ''; }, 2400);
+}
+
+/* ───────── PHASE: BETTING ───────── */
+let countdownInterval = null;
+function startBetting(){
+  phase = PHASE.BETTING;
+  multiplier = 1.0;
+  cashedOut = false;
+  cashoutMult = 0;
+  betPlaced = false;
+  harpoonActive = false;
+  harpoonHit = false;
+  harpoonProgress = 0;
+  crashFallTime = 0;
+  dragonX = DRAGON_START_X;
+  dragonY = DRAGON_Y_BASE;
+  dragonRotation = 0;
+  dragonFrame = 0;
+
+  multEl.textContent = '1.00x';
+  multEl.classList.remove('crashed');
+  resultEl.className = '';
+  harpoonEl.style.display = 'none';
+  dragonEl.classList.remove('crashed');
+  dragonEl.src = flyFrames[0].src;
+
+  btnBet.style.display = 'inline-block';
+  btnBet.disabled = false;
+  btnCashout.style.display = 'none';
+
+  // Auto-bet repeat
+  if(autoBet && lastBetAmount > 0 && lastBetAmount <= balance){
+    currentBet = lastBetAmount;
+    updateBetDisplay();
+    placeBet();
   }
-}
 
-function hideResult(){
-  resultOverlay.className = '';
-  resultOverlay.textContent = '';
-}
+  crashPoint = generateCrashPoint();
 
-/* ── DRAW FLIGHT PATH ── */
-function drawFlightPath(){
-  // Draw faint trail
-  ctx.strokeStyle = 'rgba(255,215,0,0.15)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(PATH_START.x, PATH_START.y);
-  ctx.quadraticCurveTo(PATH_CTRL.x, PATH_CTRL.y, PATH_END.x, PATH_END.y);
-  ctx.stroke();
-
-  // Draw traveled path (gold)
-  if(phase === PHASE.FLYING || phase === PHASE.CRASHED){
-    const t = Math.min(1, Math.max(0, (multiplier - 1) / 9));
-    ctx.strokeStyle = 'rgba(255,215,0,0.5)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(PATH_START.x, PATH_START.y);
-    // Draw path up to current t
-    const steps = Math.floor(t * 50);
-    for(let i = 1; i <= steps; i++){
-      const st = i / 50;
-      const pt = bezierPoint(st);
-      ctx.lineTo(pt.x, pt.y);
+  let countdown = 3;
+  phaseEl.textContent = 'Starting in ' + countdown + '...';
+  if(countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    countdown--;
+    if(countdown <= 0){
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      startFlying();
+    } else {
+      phaseEl.textContent = 'Starting in ' + countdown + '...';
     }
-    ctx.stroke();
-  }
+  }, 1000);
 }
 
-/* ── DRAW DRAGON ── */
-let dragonShakeX = 0, dragonShakeY = 0, dragonFallY = 0;
+/* ───────── PHASE: FLYING ───────── */
+async function startFlying(){
+  phase = PHASE.FLYING;
+  phaseEl.textContent = '';
+  btnBet.style.display = 'none';
 
-function drawDragon(){
-  let t, img;
-  if(phase === PHASE.BETTING){
-    t = 0;
-    img = flyFrames[0];
-  } else if(phase === PHASE.FLYING){
-    t = Math.min(1, Math.max(0, (multiplier - 1) / 9));
-    img = flyFrames[dragonFrame];
-  } else {
-    t = Math.min(1, Math.max(0, (crashPoint - 1) / 9));
-    img = crashImg;
+  if(betPlaced){
+    const ok = await plWagerCrash(currentBet);
+    if(!ok){ betPlaced = false; return; }
+    btnCashout.style.display = 'inline-block';
+    btnCashout.textContent = 'Cash Out 1.00x';
   }
 
-  const pos = bezierPoint(t);
-  const drawX = pos.x - 50 + dragonShakeX;
-  const drawY = pos.y - 40 + dragonShakeY + dragonFallY;
-
-  if(img && img.complete && img.naturalWidth > 0){
-    ctx.drawImage(img, drawX, drawY, 100, 80);
-  } else {
-    // Fallback rectangle
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(drawX, drawY, 100, 80);
-  }
+  sndFlap.currentTime = 0;
+  sndFlap.play().catch(()=>{});
 }
 
-/* ── GAME LOOP ── */
+/* ───────── PHASE: CRASHED ───────── */
+function triggerCrash(){
+  phase = PHASE.CRASHED;
+  multiplier = crashPoint;
+  multEl.textContent = crashPoint.toFixed(2) + 'x';
+  multEl.classList.add('crashed');
+  phaseEl.textContent = 'Crashed';
+
+  sndFlap.pause();
+  sndFlap.currentTime = 0;
+
+  // Launch harpoon from platform top toward current dragon position
+  harpoonActive = true;
+  harpoonHit = false;
+  harpoonProgress = 0;
+  harpoonStartX = 60;     // top of platform, slightly right
+  harpoonStartY = 60;     // upper third of play area
+  harpoonTargetX = dragonX + DRAGON_W * 0.4;
+  harpoonTargetY = dragonY + DRAGON_H * 0.4;
+  harpoonEl.style.display = 'block';
+  sndArrow.currentTime = 0;
+  sndArrow.play().catch(()=>{});
+
+  btnCashout.style.display = 'none';
+
+  if(betPlaced && !cashedOut){
+    plSettleCrash(0);
+    showResult(false, 'busted at ' + crashPoint.toFixed(2) + 'x');
+  }
+
+  addHistory(crashPoint);
+
+  setTimeout(() => {
+    currentBet = 0;
+    selectedChip = null;
+    document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
+    updateBetDisplay();
+    startBetting();
+  }, 3500);
+}
+
+/* ───────── GAME LOOP ───────── */
 let lastTime = 0;
 let tickAccum = 0;
-let crashAnimTime = 0;
-
 function gameLoop(timestamp){
   const dt = lastTime ? (timestamp - lastTime) : 16;
   lastTime = timestamp;
 
-  // Dragon animation
+  // Dragon flap animation
   dragonAnimTimer += dt;
   if(dragonAnimTimer >= DRAGON_ANIM_MS){
     dragonAnimTimer -= DRAGON_ANIM_MS;
     if(phase === PHASE.FLYING){
       dragonFrame = (dragonFrame + 1) % 5;
+      dragonEl.src = flyFrames[dragonFrame].src;
     }
   }
 
-  // Multiplier tick
+  // Multiplier + dragon position during flight
   if(phase === PHASE.FLYING){
     tickAccum += dt;
     while(tickAccum >= 100){
       tickAccum -= 100;
-      tick++;
-      multiplier = Math.exp(0.00006 * tick);
+      // Same exp curve: ~0.6%/100ms growth, slow ramp early, fast late
+      multiplier *= Math.exp(0.006);
 
-      // Check auto-cashout
+      // Auto-cashout check
       if(betPlaced && !cashedOut){
-        const acVal = parseFloat(autoCashoutInput.value);
-        if(!isNaN(acVal) && acVal > 1 && multiplier >= acVal){
-          cashOut();
-        }
+        const acVal = parseFloat(acInput.value);
+        if(!isNaN(acVal) && acVal > 1 && multiplier >= acVal){ cashOut(); }
       }
 
-      // Check crash
       if(multiplier >= crashPoint){
         triggerCrash();
         break;
       }
     }
-    // Update multiplier display
-    if(phase === PHASE.FLYING){
-      multOverlay.textContent = multiplier.toFixed(2) + 'x';
-      btnCashout.textContent = `CASH OUT ${multiplier.toFixed(2)}x`;
+    multEl.textContent = multiplier.toFixed(2) + 'x';
+    if(btnCashout.style.display !== 'none'){
+      btnCashout.textContent = 'Cash Out ' + multiplier.toFixed(2) + 'x';
     }
+
+    // Position: as multiplier grows, dragon moves right toward edge.
+    // Compress the curve so the dragon reaches near-end at ~5x then hovers.
+    const t = Math.min(1, Math.log(multiplier) / Math.log(8));
+    dragonX = DRAGON_START_X + (DRAGON_END_X - DRAGON_START_X) * t;
+    dragonY = DRAGON_Y_BASE - Math.sin(timestamp / 380) * 14;
   }
 
-  // Crash animation
+  // Harpoon flight + crash fall
   if(phase === PHASE.CRASHED){
-    crashAnimTime += dt;
-    if(crashAnimTime < 500){
-      dragonShakeX = (Math.random() - 0.5) * 10;
-      dragonShakeY = (Math.random() - 0.5) * 10;
-      dragonFallY = crashAnimTime * 0.15;
+    crashFallTime += dt;
+
+    if(harpoonActive && !harpoonHit){
+      harpoonProgress += dt / 320;        // 320ms to reach target
+      if(harpoonProgress >= 1){
+        harpoonProgress = 1;
+        harpoonHit = true;
+        harpoonEl.style.display = 'none';
+        dragonEl.src = deadImg.src;
+        dragonEl.classList.add('crashed');
+        sndDead.currentTime = 0;
+        sndDead.play().catch(()=>{});
+      }
+      const hx = harpoonStartX + (harpoonTargetX - harpoonStartX) * harpoonProgress;
+      const hy = harpoonStartY + (harpoonTargetY - harpoonStartY) * harpoonProgress;
+      const ang = Math.atan2(harpoonTargetY - harpoonStartY, harpoonTargetX - harpoonStartX);
+      harpoonEl.style.left = hx + 'px';
+      harpoonEl.style.top  = hy + 'px';
+      harpoonEl.style.transform = 'rotate(' + (ang * 180 / Math.PI) + 'deg)';
     }
-    if(crashAnimTime > 300){
-      screenFlash.classList.remove('flash');
+
+    if(harpoonHit){
+      const fallElapsed = crashFallTime - 320;
+      if(fallElapsed > 0){
+        // Dragon rotates and falls
+        dragonY += (fallElapsed * 0.0014) * dt;
+        dragonRotation = Math.min(80, fallElapsed * 0.18);
+      }
     }
   }
 
-  // Draw
-  ctx.clearRect(0, 0, 800, 380);
-  drawParticles();
-  updateParticles(dt);
-  drawFlightPath();
-  drawDragon();
+  // Render dragon transform
+  dragonEl.style.left = dragonX + 'px';
+  dragonEl.style.top  = dragonY + 'px';
+  let scaleX = 1; // dragon faces right by default; if your sprite faces left, flip here
+  dragonEl.style.transform = `scaleX(${scaleX}) rotate(${dragonRotation}deg)`;
 
   requestAnimationFrame(gameLoop);
 }
 
-/* ── PHASE TRANSITIONS ── */
-function startBetting(){
-  phase = PHASE.BETTING;
-  tick = 0;
-  tickAccum = 0;
-  multiplier = 1.0;
-  cashedOut = false;
-  cashoutMult = 0;
-  betPlaced = false;
-  dragonShakeX = 0;
-  dragonShakeY = 0;
-  dragonFallY = 0;
-  crashAnimTime = 0;
-  dragonFrame = 0;
-
-  multOverlay.textContent = '1.00x';
-  multOverlay.classList.remove('crashed');
-  hideResult();
-  phaseLabel.textContent = 'PLACE YOUR BETS';
-  phaseLabel.style.opacity = '0.7';
-
-  btnBet.style.display = 'inline-block';
-  btnBet.disabled = false;
-  btnCashout.style.display = 'none';
-  btnCashout.classList.remove('active');
-
-  crashPoint = generateCrashPoint();
-
-  // Countdown
-  let countdown = 3;
-  phaseLabel.textContent = `STARTING IN ${countdown}...`;
-  const cdInterval = setInterval(() => {
-    countdown--;
-    if(countdown <= 0){
-      clearInterval(cdInterval);
-      startFlying();
-    } else {
-      phaseLabel.textContent = `STARTING IN ${countdown}...`;
-    }
-  }, 1000);
-}
-
-async function startFlying(){
-  phase = PHASE.FLYING;
-  phaseLabel.textContent = '';
-  phaseLabel.style.opacity = '0';
-
-  btnBet.style.display = 'none';
-
-  if(betPlaced){
-    // Place the wager with the server now that the round is starting.
-    // If the server rejects (e.g. insufficient funds — should not happen
-    // because we checked at placeBet, but races are possible), abort
-    // this round's bet.
-    const ok = await plWagerCrash(currentBet);
-    if (!ok) {
-      betPlaced = false;
-      return;
-    }
-    btnCashout.style.display = 'inline-block';
-    btnCashout.classList.add('active');
-    btnCashout.disabled = false;
-    btnCashout.textContent = 'CASH OUT 1.00x';
-  }
-}
-
-function triggerCrash(){
-  phase = PHASE.CRASHED;
-  multiplier = crashPoint;
-  crashAnimTime = 0;
-
-  multOverlay.textContent = crashPoint.toFixed(2) + 'x';
-  multOverlay.classList.add('crashed');
-  phaseLabel.textContent = 'CRASHED!';
-  phaseLabel.style.opacity = '0.7';
-
-  screenFlash.classList.add('flash');
-
-  btnCashout.classList.remove('active');
-  btnCashout.style.display = 'none';
-
-  // Crash particles
-  spawnParticles(30, 'crash');
-
-  // If player didn't cash out — settle as a loss (server credits 0).
-  if(betPlaced && !cashedOut){
-    plSettleCrash(0);
-    showResult(false, 0);
-  }
-
-  addHistory(crashPoint);
-
-  // Reset bet for next round
-  setTimeout(() => {
-    currentBet = 0;
-    updateBetDisplay();
-    startBetting();
-  }, 3000);
-}
-
-/* ── KEYBOARD ── */
+/* ───────── KEYBOARD ───────── */
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'Delete' || e.key === 'Backspace'){
-    if(document.activeElement === autoCashoutInput) return;
-    e.preventDefault();
-    clearBet();
-  }
+  if(document.activeElement === acInput) return;
   if(e.key === ' ' || e.key === 'Enter'){
-    if(document.activeElement === autoCashoutInput) return;
     e.preventDefault();
     if(phase === PHASE.BETTING) placeBet();
     else if(phase === PHASE.FLYING) cashOut();
   }
+  if(e.key === 'Backspace' || e.key === 'Delete'){
+    e.preventDefault();
+    clearBet();
+  }
 });
 
-/* ── INIT ── */
+/* ───────── INIT ───────── */
 updateBetDisplay();
 updateBalanceDisplay();
 startBetting();
