@@ -1,0 +1,353 @@
+/* Perilous Legends slots — in-house build, replaces 1Stake.
+   Colour palette / asset sizing borrowed from the original layout
+   (bg.png is 2920×1080, symbols 220×219). */
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #05020f;
+  font-family: 'Trebuchet MS', sans-serif;
+  color: #fff;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Top banner for bridge errors / insufficient funds */
+#pl-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9998;
+  background: #a30000;
+  color: #fff;
+  text-align: center;
+  padding: 9px;
+  font-size: 14px;
+  display: none;
+}
+
+/* HoH logo, peeking from the top edge */
+#hohLogo {
+  position: fixed;
+  top: -56px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 280px;
+  width: auto;
+  z-index: 500;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 12px rgba(0,0,0,0.7));
+}
+
+/* Slot root fills the viewport */
+#slot-root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a0a3a 0%, #05020f 80%);
+}
+
+/* Cabinet — uses bg.png as the chassis backdrop, scaled to fit */
+.machine {
+  position: relative;
+  width: min(96vw, 1640px);
+  aspect-ratio: 2920 / 1080;
+  background: url('assets/images/slot-machine/bg.png') center/100% 100% no-repeat;
+  display: grid;
+  /* HUD top, reels middle, controls bottom */
+  grid-template-rows: 9% 1fr 18%;
+  padding: 0 6% 0 6%;
+}
+
+/* HUD — bank / total bet / win */
+.hud {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4%;
+  font-family: Georgia, serif;
+}
+.hud-cell {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: clamp(14px, 1.6vw, 22px);
+}
+.hud-label {
+  color: #ffd700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 0.75em;
+}
+.hud-value {
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.35em;
+  min-width: 4ch;
+  text-align: right;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+.hud-suffix {
+  color: #ccc;
+  font-size: 0.85em;
+}
+
+/* Reels */
+.reels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+  padding: 1% 2%;
+}
+.reel {
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  height: 100%;
+  width: 100%;
+}
+.symbol {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: url('assets/images/slot-machine/sym_bg.png') center/100% 100% no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 120ms;
+}
+.symbol img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.symbol.winning {
+  animation: pulseWin 0.5s ease-in-out 3;
+}
+@keyframes pulseWin {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); transform: scale(1); }
+  50%      { filter: drop-shadow(0 0 18px rgba(255,215,0,0.95)); transform: scale(1.06); }
+}
+
+/* Result message floats over the reels */
+.msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: Georgia, serif;
+  font-size: clamp(20px, 3vw, 40px);
+  font-weight: bold;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 0 16px rgba(0,0,0,0.9);
+  opacity: 0;
+  transition: opacity 250ms;
+}
+.msg:not(:empty) { opacity: 1; }
+.msg.win  { color: #4aff7a; text-shadow: 0 0 18px rgba(74,255,122,0.7), 0 0 4px #000; }
+.msg.lose { color: #ff7a7a; }
+.msg.info { color: #ffd700; }
+
+/* Controls bar */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.4vw, 22px);
+  padding: 0 2%;
+}
+.img-btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background: center/100% 100% no-repeat;
+  padding: 0;
+  margin: 0;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 80ms;
+}
+.img-btn:focus { outline: none; }
+.img-btn:active { transform: scale(0.97); }
+.img-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Sized to original PNG aspect ratios — width scales with viewport */
+#paytableBtn { width: clamp(120px, 16vw, 296px); aspect-ratio: 296 / 60; }
+#betMinus, #betPlus { width: clamp(36px, 4vw, 56px); aspect-ratio: 1 / 1; }
+#maxBetBtn { width: clamp(70px, 9vw, 133px); aspect-ratio: 133 / 56; }
+#spinBtn { width: clamp(180px, 25vw, 476px); aspect-ratio: 476 / 153; }
+#muteBtn { width: clamp(36px, 4vw, 56px); aspect-ratio: 1 / 1; }
+
+/* Bet stack: -  [display]  + */
+.bet-stack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bet-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+  padding: 4px 12px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 6px;
+  color: #ffd700;
+  font-family: Georgia, serif;
+  text-shadow: 0 0 8px rgba(255,215,0,0.5);
+}
+.bet-cap {
+  font-size: 0.7em;
+  letter-spacing: 2px;
+  color: #cc99ff;
+  text-shadow: none;
+}
+.bet-num {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+/* Generic text button (pay table close, bonus collect) */
+.text-btn {
+  padding: 10px 26px;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #ffd700;
+  background: linear-gradient(135deg,#1a6b1a,#2a9b2a);
+  border: 2px solid #4aff7a;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.text-btn:hover { background: linear-gradient(135deg,#2a8b2a,#3ab53a); }
+.text-btn.spin-btn {
+  background: linear-gradient(135deg,#6b00b3,#9d36f6);
+  border-color: #cc99ff;
+}
+.text-btn.spin-btn:hover { background: linear-gradient(135deg,#8b10d3,#bf56ff); }
+
+/* ─── Paytable overlay ─────────────────────────────────────────────────── */
+.paytable-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.92);
+  align-items: center;
+  justify-content: center;
+}
+.paytable {
+  background: #1a0a3a;
+  border: 2px solid #ffd700;
+  border-radius: 14px;
+  padding: 28px 32px;
+  max-width: 880px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(255,215,0,0.4);
+  text-align: center;
+}
+.paytable h2 {
+  margin: 0 0 4px;
+  color: #ffd700;
+  font-family: Georgia, serif;
+  letter-spacing: 4px;
+  text-shadow: 0 0 16px rgba(255,215,0,0.7);
+}
+.pt-note {
+  margin: 0 0 18px;
+  color: #ccc;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.pt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.pt-cell {
+  background: rgba(255,215,0,0.05);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pt-cell img {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 8px;
+}
+.pt-rows {
+  font-family: Georgia, serif;
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.pt-rows b { color: #ffd700; }
+
+/* ─── Bonus wheel overlay ──────────────────────────────────────────────── */
+.bonus-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: radial-gradient(ellipse at center, #1a0a3a 0%, #05020f 100%);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  gap: 14px;
+  padding: 20px;
+}
+.bonus-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: #ffd700;
+  letter-spacing: 6px;
+  text-shadow: 0 0 30px rgba(255,215,0,0.9), 0 0 60px rgba(255,165,0,0.5);
+  animation: pulseGold 1s ease-in-out infinite;
+}
+.bonus-sub {
+  margin: 0;
+  color: #cc99ff;
+  letter-spacing: 3px;
+  font-size: 1rem;
+}
+.bonus-msg {
+  min-height: 2.4rem;
+  font-size: 1.4rem;
+  color: #4aff7a;
+  text-shadow: 0 0 12px rgba(74,255,122,0.6);
+  text-align: center;
+}
+#wheelCanvas {
+  width: min(70vh, 600px);
+  height: min(70vh, 600px);
+  max-width: 90vw;
+  filter: drop-shadow(0 0 30px rgba(255,215,0,0.55));
+}
+
+@keyframes pulseGold {
+  0%,100% { text-shadow: 0 0 20px rgba(255,215,0,0.7); }
+  50%      { text-shadow: 0 0 40px rgba(255,215,0,1), 0 0 80px rgba(255,165,0,0.6); }
+}
+
+/* Mobile / portrait: stack the controls under a smaller machine */
+@media (max-aspect-ratio: 16/10) {
+  .machine { width: 100vw; }
+  .hud-cell { font-size: clamp(11px, 2.2vw, 16px); }
+  .controls { gap: 6px; flex-wrap: wrap; }
+}
