@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="165" viewBox="0 0 500 165">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8668"/>
+      <stop offset="52%" stop-color="#ff5252"/>
+      <stop offset="100%" stop-color="#cb2027"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#7a0d12" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="10" y="10" rx="24" ry="24" width="480" height="145" fill="url(#bg)" stroke="#ffd7c4" stroke-opacity="0.5" stroke-width="4"/>
+    <path d="M28 22h444c8 0 14 7 14 14v24H14V36c0-7 7-14 14-14z" fill="url(#shine)" opacity="0.78"/>
+    <rect x="22" y="22" rx="18" ry="18" width="456" height="121" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <text x="250" y="93" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="700" fill="#1b0d08" letter-spacing="1.8">CASH OUT</text>
+    <text x="250" y="124" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="21" font-weight="700" fill="#24120c" opacity="0.98" letter-spacing="2.2">LOCK IN YOUR WIN</text>
+  </g>
+</svg>

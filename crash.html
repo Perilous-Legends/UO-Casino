@@ -3,409 +3,310 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dragon Hunt - HoH Casino</title>
+<title>Dragon Crash - HoH Casino</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{
   width:100%;height:100%;overflow:hidden;
-  background:#05030a;
-  color:#f5e6c8;
-  font-family:'Cinzel',serif;
+  background:#000;color:#f5e6c8;
+  font-family:'Georgia',serif;
   user-select:none;
 }
 
-/* Whole game scaled to fit viewport while preserving aspect */
-#fit-wrap{
-  position:fixed;inset:0;
-  display:flex;align-items:center;justify-content:center;
-}
-#stage{
-  position:relative;
-  width:1280px;height:800px;
-  background:#000;
-  transform-origin:center center;
-}
-
-/* Volcano backdrop covers full stage */
-#bg-layer{
-  position:absolute;inset:0;
-  background:url('crash-assets/bg.png') center/cover no-repeat;
-  z-index:0;
+/* Full-bleed volcanic background */
+#bg{
+  position:fixed;inset:0;z-index:0;
+  background:url('crash-assets/bg.jpg') center/cover no-repeat;
 }
 #bg-vignette{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.55) 100%);
-  z-index:1;pointer-events:none;
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 35% 50%, transparent 30%, rgba(0,0,0,0.55) 100%);
 }
 
-/* Side panels — sidebar2 = left (HISTORY/Balance/Bet), sidebar3 = right (auto config) */
-.sidebar{
-  position:absolute;
-  width:280px;height:760px;
-  top:20px;
-  background-size:100% 100%;
-  background-repeat:no-repeat;
-  z-index:5;
-  padding:80px 22px 26px 22px;
-  display:flex;flex-direction:column;
-  font-family:'Cinzel',serif;
-}
-#sidebar-left{ left:14px; background-image:url('crash-assets/sidebar2.png'); }
-#sidebar-right{ right:14px; background-image:url('crash-assets/sidebar3.png'); }
-.panel{
-  margin-bottom:14px;
-}
-.panel-label{
-  font-family:'Cinzel Decorative',serif;
-  font-size:13px;
-  letter-spacing:3px;
-  color:#ffd28a;
-  text-shadow:0 0 6px rgba(255,200,80,0.5);
-  text-transform:uppercase;
-  margin-bottom:6px;
-  text-align:center;
-}
-.panel-value{
-  font-size:18px;color:#ffe9b3;text-align:center;
-  text-shadow:0 0 8px rgba(255,200,80,0.4);
-  font-weight:700;
-}
-.panel-value strong{ color:#ffd700; font-size:22px; }
-.history-strip{
-  display:flex;flex-wrap:wrap;gap:4px;justify-content:center;
-  min-height:42px;
-}
-.history-item{
-  font-size:11px;font-weight:bold;padding:2px 6px;border-radius:3px;
-  background:rgba(0,0,0,0.55);border:1px solid rgba(255,215,0,0.18);
-}
-.history-item.red    { color:#ff6464; }
-.history-item.yellow { color:#ffcc00; }
-.history-item.green  { color:#5eff8a; }
-.auto-input{
-  width:100%;padding:6px 8px;text-align:center;
-  background:rgba(0,0,0,0.55);
-  border:1px solid rgba(255,200,80,0.4);
-  color:#ffe9b3;font-family:'Cinzel',serif;font-size:16px;
-  border-radius:3px;outline:none;
-}
-.auto-toggle{
-  width:100%;padding:6px;text-align:center;cursor:pointer;
-  background:rgba(0,0,0,0.55);
-  border:1px solid rgba(255,200,80,0.4);
-  color:#ffe9b3;font-family:'Cinzel',serif;font-size:14px;
-  border-radius:3px;letter-spacing:2px;
-}
-.auto-toggle.on{
-  background:rgba(255,200,80,0.18);
-  color:#ffd700;border-color:#ffd700;
-  box-shadow:0 0 10px rgba(255,200,80,0.4);
-}
-
-/* Central play area, framed by border.png */
-#play-frame{
-  position:absolute;
-  left:300px;top:30px;
-  width:680px;height:540px;
-  z-index:3;
-  background-image:url('crash-assets/border.png');
-  background-size:100% 100%;
-  background-repeat:no-repeat;
-  pointer-events:none;
-}
-#play-area{
-  position:absolute;
-  left:332px;top:62px;       /* inside the border frame */
-  width:616px;height:476px;
+/* Game canvas occupies the LEFT 83% of the screen — sidebar takes the right 17%. */
+#gameCanvas{
+  position:fixed;
+  left:0;top:0;
+  width:83.1%;height:100%;
   z-index:2;
-  overflow:hidden;
+  display:block;
 }
 
-/* Harpoon platform anchors at the bottom-left of the play area */
-#platform{
-  position:absolute;
-  left:8px;bottom:0;
-  width:152px;height:319px;     /* 500x1050 scaled to ~30% */
-  background:url('crash-assets/platform.png') center bottom/100% 100% no-repeat;
-  z-index:6;
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.7));
-}
-
-/* Dragon sprite — animated via JS */
-#dragon{
-  position:absolute;
-  width:130px;height:88px;
-  z-index:7;
-  pointer-events:none;
-  transition:filter 0.2s;
-  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
-}
-#dragon.crashed{
-  filter:drop-shadow(0 0 18px rgba(220,40,40,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.8));
-}
-
-/* Harpoon projectile (visible only briefly during crash) */
-#harpoon{
-  position:absolute;
-  width:84px;height:43px;       /* 421x215 scaled */
-  background:url('crash-assets/harpoon.png') center/contain no-repeat;
-  z-index:8;
-  display:none;
-  pointer-events:none;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-}
-
-/* Multiplier overlay — top-center of play area */
+/* Multiplier readout — top-center over the canvas */
 #mult-overlay{
-  position:absolute;
-  top:30px;left:50%;
+  position:fixed;
+  top:5%;left:41.5%;
   transform:translateX(-50%);
   font-family:'Cinzel Decorative',serif;
-  font-size:64px;font-weight:900;
+  font-size:74px;font-weight:900;
   color:#ffd700;
   text-shadow:
-    0 0 20px rgba(255,200,80,0.7),
-    0 0 40px rgba(255,140,40,0.5),
-    0 4px 4px rgba(0,0,0,0.9);
-  z-index:9;
-  letter-spacing:2px;
+    0 0 22px rgba(255,200,80,0.7),
+    0 0 44px rgba(255,140,40,0.5),
+    0 4px 4px rgba(0,0,0,0.95);
+  z-index:5;
+  letter-spacing:3px;
   pointer-events:none;
 }
 #mult-overlay.crashed{
   color:#ff4040;
   text-shadow:
-    0 0 22px rgba(255,60,60,0.8),
-    0 0 44px rgba(255,0,0,0.4),
-    0 4px 4px rgba(0,0,0,0.9);
+    0 0 24px rgba(255,60,60,0.8),
+    0 0 48px rgba(255,0,0,0.5),
+    0 4px 4px rgba(0,0,0,0.95);
 }
 
-/* Phase label — below multiplier */
+/* Phase label below multiplier */
 #phase-label{
-  position:absolute;
-  top:108px;left:50%;
+  position:fixed;
+  top:13%;left:41.5%;
   transform:translateX(-50%);
   font-family:'Cinzel',serif;
-  font-size:16px;letter-spacing:5px;
-  color:#ffe9b3;
-  text-shadow:0 0 8px rgba(0,0,0,0.9);
-  z-index:9;
-  text-transform:uppercase;
-  pointer-events:none;
-  opacity:0.8;
+  font-size:18px;letter-spacing:5px;
+  color:#ffe9b3;text-shadow:0 0 8px rgba(0,0,0,0.95);
+  z-index:5;text-transform:uppercase;pointer-events:none;opacity:0.85;
 }
 
-/* Result overlay (WIN / BUST) */
-#result-overlay{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  font-family:'Cinzel Decorative',serif;
-  font-size:54px;font-weight:900;
-  z-index:10;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity 0.25s, transform 0.25s;
-  letter-spacing:6px;
+/* Cashout button — bottom-center over the canvas, uses cashout_button.svg */
+#action-bar{
+  position:fixed;
+  bottom:6%;left:41.5%;
+  transform:translateX(-50%);
+  z-index:7;
+  display:flex;align-items:center;gap:14px;
+  width:480px;
 }
-#result-overlay.show{ opacity:1; transform:translate(-50%,-58%) scale(1.05); }
-#result-overlay.win{
-  color:#5eff8a;
-  text-shadow:0 0 20px rgba(94,255,138,0.8),0 4px 4px rgba(0,0,0,0.9);
-}
-#result-overlay.lose{
-  color:#ff4040;
-  text-shadow:0 0 20px rgba(255,64,64,0.8),0 4px 4px rgba(0,0,0,0.9);
-}
-
-/* Bottom controls strip */
-#bottom-bar{
-  position:absolute;
-  left:300px;right:300px;
-  bottom:14px;
-  height:200px;
-  z-index:5;
-  padding:14px 20px;
-  display:flex;flex-direction:column;justify-content:space-between;
-  background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%);
-  border:1px solid rgba(255,200,80,0.3);
+.payout-readout{
+  flex:1;min-width:0;
+  background:rgba(0,0,0,0.75);
+  border:1px solid #8b6914;
   border-radius:6px;
-  box-shadow:inset 0 0 30px rgba(0,0,0,0.6);
+  padding:10px 14px;
+  text-align:center;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  min-height:72px;
 }
+.payout-mult{ font:bold 22px Georgia,serif; color:#fff; line-height:1; }
+.payout-amt{  font:bold 15px Georgia,serif; color:#4ade80; line-height:1.2; margin-top:4px; }
+#cashout-btn{
+  width:210px;height:72px;padding:0;
+  background:url('crash-assets/cashout_button.svg') center/contain no-repeat;
+  border:none;cursor:pointer;
+  color:transparent;font:0/0 a;
+  display:none;
+  filter:drop-shadow(0 0 14px rgba(255,200,80,0.5));
+  transition:transform 0.08s, filter 0.15s;
+}
+#cashout-btn:hover{ transform:translateY(-1px); filter:drop-shadow(0 0 20px rgba(255,215,0,0.85)); }
+#cashout-btn.active{ display:block; }
+
+/* Right-side sidebar — fixed at 83.1% from left, full height */
+#sidebar{
+  position:fixed;
+  left:83.1%;top:0;
+  width:16.9%;height:100%;
+  z-index:10;
+  pointer-events:auto;
+}
+#sidebar-bg{
+  position:absolute;inset:0;
+  background:url('crash-assets/sidebar3.png') center/100% 100% no-repeat;
+  pointer-events:none;
+}
+.sb-block{
+  position:absolute;
+  z-index:1;
+}
+.sb-label{
+  font-family:'Cinzel Decorative',serif;
+  font-size:11px;letter-spacing:3px;
+  color:#ffd28a;text-transform:uppercase;
+  text-align:center;
+  text-shadow:0 0 6px rgba(0,0,0,0.9);
+}
+.sb-value{
+  font-family:Georgia,serif;font-size:18px;font-weight:bold;
+  color:#ffd700;text-align:center;
+  text-shadow:0 0 8px rgba(0,0,0,0.95);
+}
+
+/* Sidebar layout — coordinates expressed as % of sidebar.
+   These mirror the production HoH casino layout. */
+#sb-balance     { top: 4.0%; left: 0; width:100%; }
+#sb-currentbet  { top: 8.0%; left: 0; width:100%; }
+#sb-history     { top:13.4%; left:23.3%; width:72%; height:5%; }
+#sb-chips       { top:28.5%; left: 4%;  width:92%; }
+#sb-betinput    { top:36.0%; left:10%;  width:80%; }
+#sb-confirm     { top:42.5%; left:10%;  width:80%; }
+#sb-autocashout { top:48.5%; left:10%;  width:80%; }
+#sb-feed        { top:57.6%; left: 5%;  width:90%; height:38%; }
+
+#balance-val,#bet-val{
+  font-family:Georgia,serif;font-weight:bold;
+  font-size:22px;color:#ffd700;
+  text-shadow:0 0 8px rgba(0,0,0,0.9);
+}
+#bet-val{ color:#ffffff; }
+
+#history-strip{
+  display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-items:center;
+  height:100%;
+}
+.h-item{
+  font:bold 11px Georgia,serif; padding:1px 5px;
+  border-radius:3px; background:rgba(0,0,0,0.55);
+  border:1px solid rgba(255,215,0,0.18);
+}
+.h-item.red    { color:#ff6464; }
+.h-item.yellow { color:#ffcc00; }
+.h-item.green  { color:#5eff8a; }
 
 .chips-row{
-  display:flex;justify-content:center;gap:14px;
+  display:flex;justify-content:center;align-items:center;gap:5px;flex-wrap:nowrap;
 }
 .chip-btn{
-  width:62px;height:62px;border-radius:50%;
-  border:3px solid rgba(255,200,80,0.4);
+  width:42px;height:42px;border-radius:50%;
+  border:2px solid rgba(255,200,80,0.4);
   cursor:pointer;background:none;padding:0;
-  transition:transform 0.12s,border-color 0.15s,box-shadow 0.15s;
-  -webkit-tap-highlight-color:transparent;
+  transition:transform 0.1s,border-color 0.15s,box-shadow 0.15s;
 }
-.chip-btn img{
-  width:100%;height:100%;border-radius:50%;
-  pointer-events:none;display:block;
-}
+.chip-btn img{ width:100%;height:100%;border-radius:50%;display:block;pointer-events:none; }
 .chip-btn:hover{
-  transform:scale(1.08);
+  transform:scale(1.12);
   border-color:rgba(255,215,0,0.7);
-  box-shadow:0 0 12px rgba(255,200,80,0.5);
+  box-shadow:0 0 10px rgba(255,200,80,0.5);
 }
 .chip-btn.selected{
   border-color:#ffd700;
   box-shadow:0 0 14px rgba(255,215,0,0.7);
 }
 
-.controls-row{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
+.field-input{
+  width:100%;padding:6px 8px;text-align:center;
+  background:rgba(0,0,0,0.7);
+  border:1px solid #8b6914;
+  color:#ffd700;font:14px Georgia,serif;
+  border-radius:4px;outline:none;
 }
-.btn{
-  padding:10px 20px;
-  background:linear-gradient(135deg,#3a1a06 0%,#5a2c0a 100%);
-  color:#ffd28a;
-  border:2px solid #8a5a1a;
-  border-radius:5px;
-  font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:2px;
-  cursor:pointer;
-  transition:transform 0.1s,filter 0.15s;
-  text-transform:uppercase;
-}
-.btn:hover:not(:disabled){ filter:brightness(1.25); transform:translateY(-1px); }
-.btn:disabled{ opacity:0.35; cursor:not-allowed; }
-.btn-bet{
-  background:linear-gradient(135deg,#1a4a1a 0%,#2a7a2a 100%);
-  border-color:#4aff7a;color:#ddffe1;font-size:18px;padding:14px 28px;
-}
-.btn-cashout{
-  background:linear-gradient(135deg,#7a4a00 0%,#c08020 100%);
-  border-color:#ffd700;color:#fff;font-size:18px;padding:14px 28px;
-  animation:pulseGold 0.8s ease-in-out infinite;
-}
-@keyframes pulseGold{
-  0%,100%{ box-shadow:0 0 8px rgba(255,215,0,0.5); }
-  50%    { box-shadow:0 0 22px rgba(255,215,0,0.95); }
-}
-.bet-display{
-  display:flex;flex-direction:column;align-items:center;
-  padding:6px 18px;
-  border:1px solid rgba(255,200,80,0.4);
-  background:rgba(0,0,0,0.55);
+#confirm-btn{
+  width:100%;padding:8px 0;text-align:center;cursor:pointer;
+  background:transparent;
+  border:1px solid #8b6914;
+  color:#f7e7a8;font:bold 16px Georgia,serif;letter-spacing:2px;
   border-radius:4px;
-  min-width:120px;
+  text-shadow:0 0 6px rgba(0,0,0,0.9);
 }
-.bet-display small{ font-size:11px;letter-spacing:3px;color:#cfa15a; }
-.bet-display span{ font-size:22px;font-weight:bold;color:#ffd700;text-shadow:0 0 10px rgba(255,200,80,0.5); }
+#confirm-btn:hover:not(:disabled){
+  background:rgba(255,215,0,0.12);
+}
+#confirm-btn:disabled{ opacity:0.4; cursor:not-allowed; }
 
-/* Mute button — top-right corner */
+#feed{
+  height:100%;overflow-y:auto;
+  font:11px Georgia,serif;color:#ccc;
+  padding:0 2px;
+}
+#feed::-webkit-scrollbar{ width:4px; }
+#feed::-webkit-scrollbar-thumb{ background:rgba(255,200,80,0.3); }
+.feed-line{ padding:2px 0; border-bottom:1px solid rgba(139,105,20,0.25); }
+.feed-line.win{ color:#5eff8a; }
+.feed-line.lose{ color:#ff8080; opacity:0.7; }
+
+/* Mute button */
 #mute-btn{
-  position:absolute;top:20px;right:24px;z-index:50;
-  background:rgba(0,0,0,0.6);border:1px solid rgba(255,200,80,0.4);
-  color:#ffd28a;font-size:18px;padding:5px 10px;border-radius:5px;cursor:pointer;
-  font-family:'Cinzel',serif;
+  position:fixed;top:14px;right:0.5%;z-index:50;
+  background:rgba(0,0,0,0.75);
+  border:1px solid rgba(255,200,80,0.4);
+  color:#ffd28a;font-size:18px;padding:5px 10px;
+  border-radius:5px;cursor:pointer;
+  font-family:Georgia,serif;
 }
 
 /* PL banner */
 #pl-banner{
   position:fixed;top:0;left:0;right:0;z-index:9998;
   background:#a30000;color:#fff;text-align:center;padding:9px;
-  font-family:sans-serif;font-size:14px;display:none;
+  font:14px sans-serif;display:none;
 }
+
+/* Result toast */
+#result{
+  position:fixed;top:30%;left:41.5%;
+  transform:translateX(-50%);
+  font-family:'Cinzel Decorative',serif;font-size:48px;font-weight:900;
+  z-index:8;letter-spacing:5px;
+  pointer-events:none;opacity:0;
+  transition:opacity 0.25s;
+  text-shadow:0 4px 4px rgba(0,0,0,0.95);
+}
+#result.show{ opacity:1; }
+#result.win  { color:#5eff8a; text-shadow:0 0 22px rgba(94,255,138,0.8),0 4px 4px rgba(0,0,0,0.95); }
+#result.lose { color:#ff4040; text-shadow:0 0 22px rgba(255,64,64,0.8),0 4px 4px rgba(0,0,0,0.95); }
 </style>
 </head>
 <body>
 <div id="pl-banner"></div>
-<script src="pl-bridge.js?v=20260509a"></script>
+<script src="pl-bridge.js?v=20260509b"></script>
 
-<div id="fit-wrap">
-  <div id="stage">
-    <div id="bg-layer"></div>
-    <div id="bg-vignette"></div>
+<div id="bg"></div>
+<div id="bg-vignette"></div>
 
-    <button id="mute-btn" onclick="toggleMute()" title="Toggle music">&#x1f50a;</button>
-    <audio id="bgMusic" loop src="./bg-music.mp3"></audio>
-    <audio id="sndFlap"  loop src="crash-assets/flap.mp3"></audio>
-    <audio id="sndArrow"      src="crash-assets/arrow.mp3"></audio>
-    <audio id="sndDead"       src="crash-assets/dead.mp3"></audio>
+<button id="mute-btn" onclick="toggleMute()" title="Toggle music">&#x1f50a;</button>
+<audio id="sndFlying" loop src="crash-assets/sound_flying.mp3"></audio>
+<audio id="sndHarpoon"     src="crash-assets/sound_harpoon.mp3"></audio>
+<audio id="sndDeath"       src="crash-assets/sound_death.mp3"></audio>
 
-    <!-- Left sidebar: history + bank + current bet -->
-    <aside id="sidebar-left" class="sidebar">
-      <div class="panel">
-        <div class="panel-label">History</div>
-        <div class="history-strip" id="history"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Balance</div>
-        <div class="panel-value"><strong id="balance">…</strong>g</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Current Bet</div>
-        <div class="panel-value"><strong id="bet-amount">0</strong>g</div>
-      </div>
-    </aside>
+<canvas id="gameCanvas" width="1280" height="800"></canvas>
 
-    <!-- Right sidebar: auto bet + auto cashout -->
-    <aside id="sidebar-right" class="sidebar">
-      <div class="panel">
-        <div class="panel-label">Auto Bet</div>
-        <button class="auto-toggle" id="auto-bet-toggle" onclick="toggleAutoBet()">OFF</button>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Auto Cashout</div>
-        <input class="auto-input" type="text" id="auto-cashout" value="2.00" maxlength="6">
-        <div style="text-align:center;font-size:10px;color:#cfa15a;margin-top:4px;letter-spacing:2px;">multiplier x</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Last Win</div>
-        <div class="panel-value"><strong id="last-win">0</strong>g</div>
-      </div>
-    </aside>
+<div id="mult-overlay">1.00x</div>
+<div id="phase-label">Place Your Bets</div>
+<div id="result"></div>
 
-    <!-- Central play area -->
-    <div id="play-area">
-      <div id="platform"></div>
-      <img id="dragon" src="sprites/dragon/fly/dragon_fly_00.png" alt="dragon">
-      <div id="harpoon"></div>
-      <div id="mult-overlay">1.00x</div>
-      <div id="phase-label">Place Your Bets</div>
-      <div id="result-overlay"></div>
-    </div>
-    <div id="play-frame"></div>
-
-    <!-- Bottom controls -->
-    <div id="bottom-bar">
-      <div class="chips-row">
-        <button class="chip-btn" id="chip-100"   onclick="selectChip(100)"  ><img src="chip-100.png"   alt="100"></button>
-        <button class="chip-btn" id="chip-500"   onclick="selectChip(500)"  ><img src="chip-500.png"   alt="500"></button>
-        <button class="chip-btn" id="chip-1000"  onclick="selectChip(1000)" ><img src="chip-1000.png"  alt="1K"></button>
-        <button class="chip-btn" id="chip-5000"  onclick="selectChip(5000)" ><img src="chip-5000.png"  alt="5K"></button>
-        <button class="chip-btn" id="chip-10000" onclick="selectChip(10000)"><img src="chip-10000.png" alt="10K"></button>
-      </div>
-      <div class="controls-row">
-        <button class="btn" id="btn-clear" onclick="clearBet()">Clear</button>
-        <div class="bet-display">
-          <small>BET</small>
-          <span id="bet-display">0g</span>
-        </div>
-        <button class="btn btn-bet"     id="btn-bet"     onclick="placeBet()">Bet</button>
-        <button class="btn btn-cashout" id="btn-cashout" onclick="cashOut()" style="display:none;">Cash Out</button>
-      </div>
-    </div>
+<div id="action-bar">
+  <div class="payout-readout">
+    <div class="payout-mult" id="payout-mult">1.00x</div>
+    <div class="payout-amt"  id="payout-amt">+ 0g</div>
   </div>
+  <button id="cashout-btn" onclick="cashOut()">Cash Out</button>
 </div>
 
-<script>
-/* ───────── FIT-TO-VIEWPORT ───────── */
-function fitStage(){
-  const stage = document.getElementById('stage');
-  const sx = window.innerWidth  / 1280;
-  const sy = window.innerHeight / 800;
-  const s  = Math.min(sx, sy);
-  stage.style.transform = `scale(${s})`;
-}
-window.addEventListener('resize', fitStage);
-fitStage();
+<aside id="sidebar">
+  <div id="sidebar-bg"></div>
 
+  <div id="sb-balance" class="sb-block">
+    <div id="balance-val">…</div>
+  </div>
+  <div id="sb-currentbet" class="sb-block">
+    <div id="bet-val">0</div>
+  </div>
+  <div id="sb-history" class="sb-block">
+    <div id="history-strip"></div>
+  </div>
+  <div id="sb-chips" class="sb-block">
+    <div class="chips-row">
+      <button class="chip-btn" id="chip-100"   onclick="selectChip(100)"  ><img src="chip-100.png"   alt="100"></button>
+      <button class="chip-btn" id="chip-500"   onclick="selectChip(500)"  ><img src="chip-500.png"   alt="500"></button>
+      <button class="chip-btn" id="chip-1000"  onclick="selectChip(1000)" ><img src="chip-1000.png"  alt="1K"></button>
+      <button class="chip-btn" id="chip-5000"  onclick="selectChip(5000)" ><img src="chip-5000.png"  alt="5K"></button>
+      <button class="chip-btn" id="chip-10000" onclick="selectChip(10000)"><img src="chip-10000.png" alt="10K"></button>
+    </div>
+  </div>
+  <div id="sb-betinput" class="sb-block">
+    <input class="field-input" type="number" id="bet-input" min="0" step="100" value="0" />
+  </div>
+  <div id="sb-confirm" class="sb-block">
+    <button id="confirm-btn" onclick="placeBet()">Confirm</button>
+  </div>
+  <div id="sb-autocashout" class="sb-block">
+    <input class="field-input" type="text" id="auto-cashout" placeholder="auto cashout x" maxlength="6" />
+  </div>
+  <div id="sb-feed" class="sb-block">
+    <div id="feed"></div>
+  </div>
+</aside>
+
+<script>
 /* ───────── PL BRIDGE ───────── */
 let balance = 0;
 let bridgeReady = false;
@@ -417,14 +318,14 @@ let bridgeReady = false;
     const info = await PL.init();
     balance = info.balance;
     bridgeReady = true;
-    PL.onBalanceChanged((b)=>{ balance = b; updateBalanceDisplay(); });
-    updateBalanceDisplay();
+    PL.onBalanceChanged((b)=>{ balance = b; renderBalance(); });
+    renderBalance();
   }catch(e){
     showBanner('Casino offline: ' + (e && e.message || e) + ' — close this tab and buy in from a Casino Stone.');
   }
 })();
-async function plWagerCrash(amount){
-  try{ await PL.wager('crash', amount); return true; }
+async function plWager(amt){
+  try{ await PL.wager('crash', amt); return true; }
   catch(e){
     const banner = document.getElementById('pl-banner');
     if(e instanceof PL.errors.PLInsufficientFunds){
@@ -435,101 +336,187 @@ async function plWagerCrash(amount){
     return false;
   }
 }
-async function plSettleCrash(amount){
-  if(amount <= 0) return;
-  try{ await PL.settle('crash', amount); }
-  catch(e){ console.error('crash settle failed', e); }
+async function plSettle(amt){
+  if(amt <= 0) return;
+  try{ await PL.settle('crash', amt); }
+  catch(e){ console.error('settle failed', e); }
 }
 
 /* ───────── STATE ───────── */
 const PHASE = { BETTING:0, FLYING:1, CRASHED:2 };
 let phase = PHASE.BETTING;
-
 let currentBet = 0;
 let selectedChip = null;
-let autoBet = false;
-let lastWin = 0;
-let crashHistory = [];
-
 let multiplier = 1.0;
 let crashPoint = 1.0;
 let cashedOut = false;
 let cashoutMult = 0;
 let betPlaced = false;
-let lastBetAmount = 0;
-let lastChipSelected = null;
+let crashHistory = [];
 
-/* Dragon position state */
-const PLAY_W = 616, PLAY_H = 476;
-const DRAGON_W = 130, DRAGON_H = 88;
-const DRAGON_START_X = 156;     // just right of platform top
-const DRAGON_END_X   = PLAY_W - DRAGON_W - 20;
-const DRAGON_Y_BASE  = 180;
-let dragonX = DRAGON_START_X;
-let dragonY = DRAGON_Y_BASE;
-let dragonRotation = 0;
-let dragonFrame = 0;
+/* Dragon — diagonal flight from lower-left to upper-right */
+const FRAME_COUNT = 48;
+const dragonFrames = [];
+let dragonFramesLoaded = 0;
+for(let i = 1; i <= FRAME_COUNT; i++){
+  const img = new Image();
+  img.onload = () => { dragonFramesLoaded++; };
+  img.src = `crash-assets/dragon_locked/frame${String(i).padStart(2,'0')}.png`;
+  dragonFrames.push(img);
+}
+let dragonFrameIdx = 0;
 let dragonAnimTimer = 0;
-const DRAGON_ANIM_MS = 110;
+const DRAGON_ANIM_MS = 70;
 
-/* Harpoon state */
+const bgImg = new Image(); bgImg.src = 'crash-assets/bg.jpg';
+const platformImg = new Image(); platformImg.src = 'crash-assets/harpoon_platform.png';
+const harpoonImg  = new Image(); harpoonImg.src  = 'crash-assets/harpoon_bolt.png';
+const deadImg     = new Image(); deadImg.src     = 'crash-assets/dragon_dead.png';
+
+/* Dragon position state.
+   Logical canvas is 1280x800 (CSS scales it to viewport).
+   Dragon flies from lower-left toward upper-right corner. */
+const PLAY_W = 1280, PLAY_H = 800;
+const DRAGON_DRAW_W = 240;
+const DRAGON_DRAW_H = 206;
+const DRAGON_START_X = 60;
+const DRAGON_START_Y = 540;
+const DRAGON_END_X   = 880;        // stops before reaching the platform area
+const DRAGON_END_Y   = 110;
+let dragonX = DRAGON_START_X;
+let dragonY = DRAGON_START_Y;
+let dragonRotation = 0;
+let dragonDead = false;
+
+/* Harpoon platform draws on the RIGHT side of the canvas.
+   Platform PNG is 500x1050. Drawn ~360 wide, anchored bottom-right. */
+const PLAT_W = 360, PLAT_H = 756;
+const PLAT_X = PLAY_W - PLAT_W - 30;     // ~890
+const PLAT_Y = PLAY_H - PLAT_H + 110;    // sticks below bottom edge a touch
+const HARPOONER_X = PLAT_X + 80;          // approximate harpooner figure on platform
+const HARPOONER_Y = PLAT_Y + 70;
+
+/* Harpoon-projectile state */
 let harpoonActive = false;
+let harpoonHit = false;
+let harpoonProgress = 0;
 let harpoonStartX = 0, harpoonStartY = 0;
 let harpoonTargetX = 0, harpoonTargetY = 0;
-let harpoonProgress = 0;
-let harpoonHit = false;
+let harpoonAngle = 0;
+const HARPOON_DRAW_W = 180;
+const HARPOON_DRAW_H = 92;
 
-/* Crash anim */
+/* Crash fall */
 let crashFallTime = 0;
 
 /* ───────── DOM REFS ───────── */
-const dragonEl   = document.getElementById('dragon');
-const harpoonEl  = document.getElementById('harpoon');
-const multEl     = document.getElementById('mult-overlay');
-const phaseEl    = document.getElementById('phase-label');
-const resultEl   = document.getElementById('result-overlay');
-const balanceEl  = document.getElementById('balance');
-const betDispEl  = document.getElementById('bet-display');
-const betAmtEl   = document.getElementById('bet-amount');
-const lastWinEl  = document.getElementById('last-win');
-const btnBet     = document.getElementById('btn-bet');
-const btnCashout = document.getElementById('btn-cashout');
-const historyEl  = document.getElementById('history');
-const acInput    = document.getElementById('auto-cashout');
-const sndFlap    = document.getElementById('sndFlap');
-const sndArrow   = document.getElementById('sndArrow');
-const sndDead    = document.getElementById('sndDead');
-const bgMusic    = document.getElementById('bgMusic');
-bgMusic.volume = 0.4;
-sndFlap.volume = 0.55;
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const multEl = document.getElementById('mult-overlay');
+const phaseEl= document.getElementById('phase-label');
+const resultEl = document.getElementById('result');
+const balanceEl = document.getElementById('balance-val');
+const betValEl = document.getElementById('bet-val');
+const betInputEl = document.getElementById('bet-input');
+const confirmBtn = document.getElementById('confirm-btn');
+const cashoutBtn = document.getElementById('cashout-btn');
+const acInput  = document.getElementById('auto-cashout');
+const payoutMultEl = document.getElementById('payout-mult');
+const payoutAmtEl  = document.getElementById('payout-amt');
+const histEl = document.getElementById('history-strip');
+const feedEl = document.getElementById('feed');
+const sndFlying  = document.getElementById('sndFlying');
+const sndHarpoon = document.getElementById('sndHarpoon');
+const sndDeath   = document.getElementById('sndDeath');
+sndFlying.volume = 0.45;
+sndHarpoon.volume = 0.7;
+sndDeath.volume = 0.85;
 
 /* ───────── AUDIO ───────── */
 let _muted = false;
 function toggleMute(){
   _muted = !_muted;
-  bgMusic.muted = _muted;
-  sndFlap.muted = _muted;
-  sndArrow.muted = _muted;
-  sndDead.muted = _muted;
+  sndFlying.muted = _muted;
+  sndHarpoon.muted = _muted;
+  sndDeath.muted = _muted;
   document.getElementById('mute-btn').innerHTML = _muted ? '&#x1f507;' : '&#x1f50a;';
 }
-function startAudio(){
-  bgMusic.play().catch(()=>{});
-}
-document.addEventListener('pointerdown', startAudio, {once:true});
-document.addEventListener('keydown',     startAudio, {once:true});
 
-/* ───────── DRAGON SPRITES ───────── */
-const flyFrames = [];
-for(let i = 0; i < 5; i++){
-  const img = new Image();
-  img.src = `sprites/dragon/fly/dragon_fly_0${i}.png`;
-  flyFrames.push(img);
+/* ───────── CANVAS RESIZE ───────── */
+function fitCanvas(){
+  const w = window.innerWidth * 0.831;
+  const h = window.innerHeight;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  // Logical drawing size stays at 1280x800 — preserves layout coords.
+  // We also rescale dragon font/positions accordingly via the CSS '#mult-overlay'.
 }
-const deadImg = new Image();
-deadImg.src = 'sprites/dragon/fly/dragon_dead.png';
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
 
-/* ───────── CRASH POINT GEN (4% house edge) ───────── */
+/* ───────── CHIP HANDLING ───────── */
+function selectChip(val){
+  if(phase !== PHASE.BETTING || betPlaced) return;
+  selectedChip = val;
+  document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
+  const el = document.getElementById('chip-' + val);
+  if(el) el.classList.add('selected');
+  const next = currentBet + val;
+  if(next <= balance){
+    currentBet = next;
+    betInputEl.value = currentBet;
+    renderBet();
+  }
+}
+function renderBalance(){ balanceEl.textContent = balance.toLocaleString(); }
+function renderBet(){
+  betValEl.textContent = currentBet.toLocaleString();
+}
+
+/* ───────── BET / CASHOUT ───────── */
+function placeBet(){
+  if(phase !== PHASE.BETTING) return;
+  const v = Math.max(0, Math.floor(parseFloat(betInputEl.value) || 0));
+  if(v <= 0 || v > balance) return;
+  currentBet = v;
+  renderBet();
+  betPlaced = true;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Bet Locked';
+  feedAppend('You bet ' + v.toLocaleString() + 'g', '');
+}
+async function cashOut(){
+  if(phase !== PHASE.FLYING || cashedOut || !betPlaced) return;
+  cashedOut = true;
+  cashoutMult = multiplier;
+  const winnings = Math.floor(currentBet * cashoutMult);
+  await plSettle(winnings);
+  resultEl.textContent = '+ ' + winnings.toLocaleString() + 'g';
+  resultEl.className = 'show win';
+  setTimeout(()=>{ resultEl.className = ''; }, 2400);
+  feedAppend('Cashed out at ' + cashoutMult.toFixed(2) + 'x → +' + winnings.toLocaleString() + 'g', 'win');
+  cashoutBtn.classList.remove('active');
+  payoutAmtEl.textContent = '+ ' + winnings.toLocaleString() + 'g';
+}
+
+/* ───────── HISTORY / FEED ───────── */
+function addHistory(val){
+  crashHistory.unshift(val);
+  if(crashHistory.length > 12) crashHistory.pop();
+  histEl.innerHTML = crashHistory.map(v => {
+    const cls = v < 2 ? 'red' : v < 5 ? 'yellow' : 'green';
+    return `<span class="h-item ${cls}">${v.toFixed(2)}x</span>`;
+  }).join('');
+}
+function feedAppend(text, cls){
+  const line = document.createElement('div');
+  line.className = 'feed-line ' + (cls||'');
+  line.textContent = text;
+  feedEl.insertBefore(line, feedEl.firstChild);
+  while(feedEl.children.length > 30) feedEl.removeChild(feedEl.lastChild);
+}
+
+/* ───────── CRASH POINT (4% house edge) ───────── */
 function generateCrashPoint(){
   let r = Math.random();
   let cp = -1 / Math.log(r) * 0.96;
@@ -540,83 +527,7 @@ function generateCrashPoint(){
   return cp;
 }
 
-/* ───────── CHIP HANDLING ───────── */
-function selectChip(val){
-  if(phase !== PHASE.BETTING || betPlaced) return;
-  selectedChip = val;
-  document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
-  const el = document.getElementById('chip-' + val);
-  if(el) el.classList.add('selected');
-  if(currentBet + val <= balance){
-    currentBet += val;
-    updateBetDisplay();
-  }
-}
-function clearBet(){
-  if(phase !== PHASE.BETTING || betPlaced) return;
-  currentBet = 0;
-  selectedChip = null;
-  document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
-  updateBetDisplay();
-}
-function updateBetDisplay(){
-  betDispEl.textContent = currentBet.toLocaleString() + 'g';
-  betAmtEl.textContent  = currentBet.toLocaleString();
-}
-function updateBalanceDisplay(){
-  balanceEl.textContent = balance.toLocaleString();
-}
-
-/* ───────── BET / CASHOUT ───────── */
-function placeBet(){
-  if(phase !== PHASE.BETTING || currentBet <= 0) return;
-  betPlaced = true;
-  btnBet.disabled = true;
-  lastBetAmount = currentBet;
-  lastChipSelected = selectedChip;
-}
-async function cashOut(){
-  if(phase !== PHASE.FLYING || cashedOut || !betPlaced) return;
-  cashedOut = true;
-  cashoutMult = multiplier;
-  const winnings = Math.floor(currentBet * cashoutMult);
-  await plSettleCrash(winnings);
-  lastWin = winnings;
-  lastWinEl.textContent = winnings.toLocaleString();
-  showResult(true, 'cash out ' + cashoutMult.toFixed(2) + 'x  +' + winnings.toLocaleString() + 'g');
-  btnCashout.style.display = 'none';
-}
-
-/* ───────── AUTO BET ───────── */
-function toggleAutoBet(){
-  autoBet = !autoBet;
-  const t = document.getElementById('auto-bet-toggle');
-  t.textContent = autoBet ? 'ON' : 'OFF';
-  t.classList.toggle('on', autoBet);
-}
-
-/* ───────── HISTORY ───────── */
-function addHistory(val){
-  crashHistory.unshift(val);
-  if(crashHistory.length > 12) crashHistory.pop();
-  renderHistory();
-}
-function renderHistory(){
-  historyEl.innerHTML = '';
-  for(const v of crashHistory){
-    const cls = v < 2 ? 'red' : v < 5 ? 'yellow' : 'green';
-    historyEl.innerHTML += `<span class="history-item ${cls}">${v.toFixed(2)}x</span>`;
-  }
-}
-
-/* ───────── RESULT OVERLAY ───────── */
-function showResult(win, text){
-  resultEl.textContent = text;
-  resultEl.className = 'show ' + (win ? 'win' : 'lose');
-  setTimeout(() => { resultEl.className = ''; }, 2400);
-}
-
-/* ───────── PHASE: BETTING ───────── */
+/* ───────── PHASE TRANSITIONS ───────── */
 let countdownInterval = null;
 function startBetting(){
   phase = PHASE.BETTING;
@@ -629,90 +540,80 @@ function startBetting(){
   harpoonProgress = 0;
   crashFallTime = 0;
   dragonX = DRAGON_START_X;
-  dragonY = DRAGON_Y_BASE;
+  dragonY = DRAGON_START_Y;
   dragonRotation = 0;
-  dragonFrame = 0;
+  dragonDead = false;
+  dragonFrameIdx = 0;
 
   multEl.textContent = '1.00x';
   multEl.classList.remove('crashed');
   resultEl.className = '';
-  harpoonEl.style.display = 'none';
-  dragonEl.classList.remove('crashed');
-  dragonEl.src = flyFrames[0].src;
+  cashoutBtn.classList.remove('active');
+  payoutMultEl.textContent = '1.00x';
+  payoutAmtEl.textContent  = '+ 0g';
 
-  btnBet.style.display = 'inline-block';
-  btnBet.disabled = false;
-  btnCashout.style.display = 'none';
-
-  // Auto-bet repeat
-  if(autoBet && lastBetAmount > 0 && lastBetAmount <= balance){
-    currentBet = lastBetAmount;
-    updateBetDisplay();
-    placeBet();
-  }
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = 'Confirm';
 
   crashPoint = generateCrashPoint();
 
-  let countdown = 3;
-  phaseEl.textContent = 'Starting in ' + countdown + '...';
+  let cd = 5;
+  phaseEl.textContent = 'Starting in ' + cd + '...';
   if(countdownInterval) clearInterval(countdownInterval);
   countdownInterval = setInterval(() => {
-    countdown--;
-    if(countdown <= 0){
+    cd--;
+    if(cd <= 0){
       clearInterval(countdownInterval);
       countdownInterval = null;
       startFlying();
     } else {
-      phaseEl.textContent = 'Starting in ' + countdown + '...';
+      phaseEl.textContent = 'Starting in ' + cd + '...';
     }
   }, 1000);
 }
 
-/* ───────── PHASE: FLYING ───────── */
 async function startFlying(){
   phase = PHASE.FLYING;
   phaseEl.textContent = '';
-  btnBet.style.display = 'none';
-
   if(betPlaced){
-    const ok = await plWagerCrash(currentBet);
+    const ok = await plWager(currentBet);
     if(!ok){ betPlaced = false; return; }
-    btnCashout.style.display = 'inline-block';
-    btnCashout.textContent = 'Cash Out 1.00x';
+    cashoutBtn.classList.add('active');
   }
-
-  sndFlap.currentTime = 0;
-  sndFlap.play().catch(()=>{});
+  sndFlying.currentTime = 0;
+  sndFlying.play().catch(()=>{});
 }
 
-/* ───────── PHASE: CRASHED ───────── */
 function triggerCrash(){
   phase = PHASE.CRASHED;
   multiplier = crashPoint;
   multEl.textContent = crashPoint.toFixed(2) + 'x';
   multEl.classList.add('crashed');
   phaseEl.textContent = 'Crashed';
+  payoutMultEl.textContent = crashPoint.toFixed(2) + 'x';
 
-  sndFlap.pause();
-  sndFlap.currentTime = 0;
+  sndFlying.pause(); sndFlying.currentTime = 0;
 
-  // Launch harpoon from platform top toward current dragon position
+  // Launch harpoon from harpooner's position toward dragon
   harpoonActive = true;
   harpoonHit = false;
   harpoonProgress = 0;
-  harpoonStartX = 60;     // top of platform, slightly right
-  harpoonStartY = 60;     // upper third of play area
-  harpoonTargetX = dragonX + DRAGON_W * 0.4;
-  harpoonTargetY = dragonY + DRAGON_H * 0.4;
-  harpoonEl.style.display = 'block';
-  sndArrow.currentTime = 0;
-  sndArrow.play().catch(()=>{});
+  harpoonStartX  = HARPOONER_X;
+  harpoonStartY  = HARPOONER_Y;
+  harpoonTargetX = dragonX + DRAGON_DRAW_W * 0.5;
+  harpoonTargetY = dragonY + DRAGON_DRAW_H * 0.5;
+  harpoonAngle = Math.atan2(harpoonTargetY - harpoonStartY, harpoonTargetX - harpoonStartX);
+  sndHarpoon.currentTime = 0;
+  sndHarpoon.play().catch(()=>{});
 
-  btnCashout.style.display = 'none';
+  cashoutBtn.classList.remove('active');
 
   if(betPlaced && !cashedOut){
-    plSettleCrash(0);
-    showResult(false, 'busted at ' + crashPoint.toFixed(2) + 'x');
+    plSettle(0);
+    resultEl.textContent = 'Busted at ' + crashPoint.toFixed(2) + 'x';
+    resultEl.className = 'show lose';
+    setTimeout(()=>{ resultEl.className = ''; }, 2400);
+    feedAppend('Busted at ' + crashPoint.toFixed(2) + 'x', 'lose');
   }
 
   addHistory(crashPoint);
@@ -721,120 +622,137 @@ function triggerCrash(){
     currentBet = 0;
     selectedChip = null;
     document.querySelectorAll('.chip-btn').forEach(e => e.classList.remove('selected'));
-    updateBetDisplay();
+    betInputEl.value = 0;
+    renderBet();
     startBetting();
-  }, 3500);
+  }, 4000);
 }
 
-/* ───────── GAME LOOP ───────── */
-let lastTime = 0;
+/* ───────── RENDER LOOP ───────── */
+let lastT = 0;
 let tickAccum = 0;
-function gameLoop(timestamp){
-  const dt = lastTime ? (timestamp - lastTime) : 16;
-  lastTime = timestamp;
+function frame(t){
+  const dt = lastT ? (t - lastT) : 16;
+  lastT = t;
 
-  // Dragon flap animation
+  // Dragon animation timer
   dragonAnimTimer += dt;
   if(dragonAnimTimer >= DRAGON_ANIM_MS){
     dragonAnimTimer -= DRAGON_ANIM_MS;
     if(phase === PHASE.FLYING){
-      dragonFrame = (dragonFrame + 1) % 5;
-      dragonEl.src = flyFrames[dragonFrame].src;
+      dragonFrameIdx = (dragonFrameIdx + 1) % FRAME_COUNT;
     }
   }
 
-  // Multiplier + dragon position during flight
+  // Multiplier ticks + dragon trajectory
   if(phase === PHASE.FLYING){
     tickAccum += dt;
     while(tickAccum >= 100){
       tickAccum -= 100;
-      // Same exp curve: ~0.6%/100ms growth, slow ramp early, fast late
       multiplier *= Math.exp(0.006);
 
-      // Auto-cashout check
       if(betPlaced && !cashedOut){
         const acVal = parseFloat(acInput.value);
         if(!isNaN(acVal) && acVal > 1 && multiplier >= acVal){ cashOut(); }
       }
-
-      if(multiplier >= crashPoint){
-        triggerCrash();
-        break;
-      }
+      if(multiplier >= crashPoint){ triggerCrash(); break; }
     }
     multEl.textContent = multiplier.toFixed(2) + 'x';
-    if(btnCashout.style.display !== 'none'){
-      btnCashout.textContent = 'Cash Out ' + multiplier.toFixed(2) + 'x';
+    payoutMultEl.textContent = multiplier.toFixed(2) + 'x';
+    if(betPlaced && !cashedOut){
+      payoutAmtEl.textContent = '+ ' + Math.floor(currentBet * multiplier).toLocaleString() + 'g';
     }
 
-    // Position: as multiplier grows, dragon moves right toward edge.
-    // Compress the curve so the dragon reaches near-end at ~5x then hovers.
-    const t = Math.min(1, Math.log(multiplier) / Math.log(8));
-    dragonX = DRAGON_START_X + (DRAGON_END_X - DRAGON_START_X) * t;
-    dragonY = DRAGON_Y_BASE - Math.sin(timestamp / 380) * 14;
+    // Diagonal trajectory: log-curve eases the dragon to upper-right corner
+    const tNorm = Math.min(1, Math.log(multiplier) / Math.log(8));
+    dragonX = DRAGON_START_X + (DRAGON_END_X - DRAGON_START_X) * tNorm;
+    dragonY = DRAGON_START_Y + (DRAGON_END_Y - DRAGON_START_Y) * tNorm;
+    dragonY += Math.sin(t / 380) * 12;        // wing-bob
   }
 
-  // Harpoon flight + crash fall
+  // Harpoon flight + dragon fall during crash
   if(phase === PHASE.CRASHED){
     crashFallTime += dt;
-
     if(harpoonActive && !harpoonHit){
-      harpoonProgress += dt / 320;        // 320ms to reach target
+      harpoonProgress += dt / 320;
       if(harpoonProgress >= 1){
         harpoonProgress = 1;
         harpoonHit = true;
-        harpoonEl.style.display = 'none';
-        dragonEl.src = deadImg.src;
-        dragonEl.classList.add('crashed');
-        sndDead.currentTime = 0;
-        sndDead.play().catch(()=>{});
+        dragonDead = true;
+        sndDeath.currentTime = 0;
+        sndDeath.play().catch(()=>{});
       }
-      const hx = harpoonStartX + (harpoonTargetX - harpoonStartX) * harpoonProgress;
-      const hy = harpoonStartY + (harpoonTargetY - harpoonStartY) * harpoonProgress;
-      const ang = Math.atan2(harpoonTargetY - harpoonStartY, harpoonTargetX - harpoonStartX);
-      harpoonEl.style.left = hx + 'px';
-      harpoonEl.style.top  = hy + 'px';
-      harpoonEl.style.transform = 'rotate(' + (ang * 180 / Math.PI) + 'deg)';
     }
-
     if(harpoonHit){
       const fallElapsed = crashFallTime - 320;
       if(fallElapsed > 0){
-        // Dragon rotates and falls
-        dragonY += (fallElapsed * 0.0014) * dt;
-        dragonRotation = Math.min(80, fallElapsed * 0.18);
+        dragonY += (fallElapsed * 0.0018) * dt;
+        dragonRotation = Math.min(85, fallElapsed * 0.2);
       }
     }
   }
 
-  // Render dragon transform
-  dragonEl.style.left = dragonX + 'px';
-  dragonEl.style.top  = dragonY + 'px';
-  let scaleX = 1; // dragon faces right by default; if your sprite faces left, flip here
-  dragonEl.style.transform = `scaleX(${scaleX}) rotate(${dragonRotation}deg)`;
+  // Render
+  ctx.clearRect(0, 0, PLAY_W, PLAY_H);
 
-  requestAnimationFrame(gameLoop);
+  // Background draws via CSS — but we still need a transparent canvas. No-op here.
+
+  // Harpoon platform on the right side
+  if(platformImg.complete && platformImg.naturalWidth){
+    ctx.drawImage(platformImg, PLAT_X, PLAT_Y, PLAT_W, PLAT_H);
+  }
+
+  // Dragon
+  ctx.save();
+  ctx.translate(dragonX + DRAGON_DRAW_W / 2, dragonY + DRAGON_DRAW_H / 2);
+  if(dragonRotation) ctx.rotate(dragonRotation * Math.PI / 180);
+  if(dragonDead && deadImg.complete && deadImg.naturalWidth){
+    ctx.drawImage(deadImg, -DRAGON_DRAW_W / 2, -DRAGON_DRAW_H / 2, DRAGON_DRAW_W, DRAGON_DRAW_H);
+  } else {
+    const f = dragonFrames[dragonFrameIdx];
+    if(f && f.complete && f.naturalWidth){
+      ctx.drawImage(f, -DRAGON_DRAW_W / 2, -DRAGON_DRAW_H / 2, DRAGON_DRAW_W, DRAGON_DRAW_H);
+    }
+  }
+  ctx.restore();
+
+  // Harpoon projectile (if in flight)
+  if(phase === PHASE.CRASHED && harpoonActive && !harpoonHit && harpoonImg.complete){
+    const hx = harpoonStartX + (harpoonTargetX - harpoonStartX) * harpoonProgress;
+    const hy = harpoonStartY + (harpoonTargetY - harpoonStartY) * harpoonProgress;
+    ctx.save();
+    ctx.translate(hx, hy);
+    // Harpoon PNG points right by default; we want it pointing FROM platform to dragon.
+    // The platform is on the right, the dragon is on the left → harpoon flies leftward,
+    // so flip horizontally then rotate to angle.
+    ctx.rotate(harpoonAngle + Math.PI);
+    ctx.drawImage(harpoonImg, -HARPOON_DRAW_W / 2, -HARPOON_DRAW_H / 2, HARPOON_DRAW_W, HARPOON_DRAW_H);
+    ctx.restore();
+  }
+
+  requestAnimationFrame(frame);
 }
 
 /* ───────── KEYBOARD ───────── */
 document.addEventListener('keydown', (e) => {
-  if(document.activeElement === acInput) return;
+  if(document.activeElement === acInput || document.activeElement === betInputEl) return;
   if(e.key === ' ' || e.key === 'Enter'){
     e.preventDefault();
     if(phase === PHASE.BETTING) placeBet();
     else if(phase === PHASE.FLYING) cashOut();
   }
-  if(e.key === 'Backspace' || e.key === 'Delete'){
-    e.preventDefault();
-    clearBet();
-  }
 });
 
 /* ───────── INIT ───────── */
-updateBetDisplay();
-updateBalanceDisplay();
+betInputEl.addEventListener('input', () => {
+  const v = Math.max(0, Math.floor(parseFloat(betInputEl.value) || 0));
+  currentBet = v;
+  renderBet();
+});
+renderBalance();
+renderBet();
 startBetting();
-requestAnimationFrame(gameLoop);
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
