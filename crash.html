@@ -138,8 +138,8 @@ html,body{
 #sb-history     { top:13.4%; left:23.3%; width:72%; height:5%; }
 #sb-chips       { top:28.5%; left: 4%;  width:92%; }
 #sb-betinput    { top:36.0%; left:10%;  width:80%; }
-#sb-confirm     { top:38.0%; left:10%;  width:80%; }
-#sb-autocashout { top:44.0%; left:10%;  width:80%; }
+#sb-confirm     { top:33.4%; left:10%;  width:80%; }
+#sb-autocashout { top:39.4%; left:10%;  width:80%; }
 #sb-feed        { top:62.0%; left: 5%;  width:90%; height:34%; }
 
 #balance-val,#bet-val{
@@ -379,7 +379,7 @@ const deadImg     = new Image(); deadImg.src     = 'crash-assets/dragon_dead.png
 const PLAY_W = 1280, PLAY_H = 800;
 const DRAGON_DRAW_W = 600;
 const DRAGON_DRAW_H = 515;
-const DRAGON_START_X = -100;       // partially off-screen left, dragon enters from the edge
+const DRAGON_START_X = -300;       // 200px further left so the body actually reads as starting at the screen edge
 const DRAGON_START_Y = 540;
 const DRAGON_END_X   = 400;        // ends mid-canvas; clear of the right-side platform
 const DRAGON_END_Y   = 60;
