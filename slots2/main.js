@@ -556,57 +556,71 @@
   async function spinBonusWheel() {
     if (bonusSpinning || bonusSpinsLeft <= 0) return;
     bonusSpinning = true;
-    document.getElementById('bonusSpinBtn').disabled = true;
-    document.getElementById('bonusMsg').textContent = '';
 
-    playSound('wheel-spin', /*loop*/ true);
+    const btn      = document.getElementById('bonusSpinBtn');
+    const msg      = document.getElementById('bonusMsg');
+    const sub      = document.getElementById('bonusSub');
+    const closeBtn = document.getElementById('bonusCloseBtn');
 
-    const slice = Math.floor(Math.random() * WHEEL_PRIZES.length);
-    const totalRotation = (5 + Math.random() * 3) * 360 + (slice * (360 / WHEEL_PRIZES.length));
-    const dur = 4500;
-    const start = Date.now();
+    btn.disabled = true;
+    msg.textContent = '';
 
-    await new Promise(resolve => {
-      function tick() {
-        const t = Math.min(1, (Date.now() - start) / dur);
-        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-        drawBonusWheel(eased * totalRotation);
-        if (t < 1) requestAnimationFrame(tick);
-        else resolve();
+    let extraSpin = false;
+    try {
+      playSound('wheel-spin', /*loop*/ true);
+
+      // Wheel slices are drawn clockwise from the pointer (top). Rotating
+      // the wheel by `-(slice + 0.5) * sliceDeg` (mod 360) lands slice
+      // center under the pointer. Add 5..8 full revs for a real spin.
+      const slice = Math.floor(Math.random() * WHEEL_PRIZES.length);
+      const sliceDeg = 360 / WHEEL_PRIZES.length;
+      const fullRevs = 5 + Math.floor(Math.random() * 4);
+      const totalRotation = fullRevs * 360 - (slice + 0.5) * sliceDeg;
+      const dur = 4500;
+      const start = Date.now();
+
+      await new Promise(resolve => {
+        function tick() {
+          const t = Math.min(1, (Date.now() - start) / dur);
+          const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          drawBonusWheel(eased * totalRotation);
+          if (t < 1) requestAnimationFrame(tick);
+          else resolve();
+        }
+        requestAnimationFrame(tick);
+      });
+
+      const prize = WHEEL_PRIZES[slice];
+      let payout = 0;
+      if (prize.kind === 'flat' || prize.kind === 'jackpot') payout = prize.amount;
+      else if (prize.kind === 'mult') payout = prize.mult * bonusBet;
+      else if (prize.kind === 'freespin') { payout = prize.amount; extraSpin = true; }
+
+      if (payout > 0) {
+        try { await PL.settle('slots', payout); }
+        catch (e) { console.error('bonus settle failed', e); }
+        playSound('win');
+        msg.textContent = `${prize.label} → +${payout.toLocaleString()}g`;
+      } else {
+        msg.textContent = prize.label;
       }
-      requestAnimationFrame(tick);
-    });
 
-    stopSound('wheel-spin');
-    const prize = WHEEL_PRIZES[slice];
-    let payout = 0;
-    let label = prize.label;
-    if (prize.kind === 'flat' || prize.kind === 'jackpot') payout = prize.amount;
-    else if (prize.kind === 'mult') payout = prize.mult * bonusBet;
-    else if (prize.kind === 'freespin') {
-      payout = prize.amount;
-      bonusSpinsLeft++; // give back the spin we're about to consume
+      // Consume the spin we just used. Free-spin awards an extra so the
+      // net change is zero.
+      bonusSpinsLeft -= 1;
+      if (extraSpin) bonusSpinsLeft += 1;
+    } finally {
+      stopSound('wheel-spin');
+      bonusSpinning = false;
+      if (bonusSpinsLeft > 0) {
+        btn.style.display = '';
+        btn.disabled = false;
+        sub.textContent = bonusSpinsLeft + ' spin' + (bonusSpinsLeft > 1 ? 's' : '') + ' remaining';
+      } else {
+        btn.style.display = 'none';
+        closeBtn.style.display = '';
+      }
     }
-
-    if (payout > 0) {
-      try { await PL.settle('slots', payout); }
-      catch (e) { console.error('bonus settle failed', e); }
-      playSound('win');
-      document.getElementById('bonusMsg').textContent =
-        `${label} → +${payout.toLocaleString()}g`;
-    } else {
-      document.getElementById('bonusMsg').textContent = label;
-    }
-
-    bonusSpinsLeft--;
-    if (bonusSpinsLeft <= 0) {
-      document.getElementById('bonusSpinBtn').style.display = 'none';
-      document.getElementById('bonusCloseBtn').style.display = '';
-    } else {
-      document.getElementById('bonusSpinBtn').disabled = false;
-      document.getElementById('bonusSub').textContent = bonusSpinsLeft + ' spin' + (bonusSpinsLeft > 1 ? 's' : '') + ' remaining';
-    }
-    bonusSpinning = false;
   }
 
   function drawBonusWheel(angleDeg) {

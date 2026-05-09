@@ -56,7 +56,7 @@ const ZONES = [
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
   // Slots — in-house build at slots2/ wired through PL.wager/PL.settle.
-  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/index.html' },
+  { id: 'slots',     label: 'Slots',                x: 203, y: 643, w:  59, h: 108, type: 'game',        url: './slots2/index.html?v=20260509a' },
   { id: 'scratch',   label: 'Lucky Scratch',        x: 443, y: 135, w:  99, h:  89, type: 'game',        url: './scratch.html' },
   { id: 'bar',       label: 'Bar',                  x: 480, y:  54, w: 705, h: 140, type: 'coming_soon' }
 ];
