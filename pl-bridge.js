@@ -262,13 +262,38 @@
     throw new PLBridgeError(code, reason);
   }
 
+  // Cross-frame balance broadcast so the floor HUD updates the moment
+  // an in-iframe game wagers/settles, instead of waiting up to 60 s for
+  // the parent's next heartbeat. Each PL bridge instance (one per
+  // frame) subscribes to the same per-session channel.
+  let _bcChannel = null;
+  function ensureBroadcast() {
+    if (_bcChannel || !_sid || typeof BroadcastChannel === 'undefined') return;
+    try {
+      _bcChannel = new BroadcastChannel('pl-casino-' + _sid);
+      _bcChannel.onmessage = (e) => {
+        if (!e || !e.data) return;
+        if (e.data.kind === 'balance') {
+          // Mirror the broadcast — but skip the re-broadcast loop.
+          _setBalanceLocal(Number(e.data.balance) || 0);
+        }
+      };
+    } catch (_) {}
+  }
+  function _setBalanceLocal(b) {
+    if (!Number.isFinite(b) || b === _balance) return;
+    _balance = b;
+    for (const cb of _balanceListeners) {
+      try { cb(_balance); } catch (_) {}
+    }
+  }
   function setBalance(b) {
     const next = Number(b);
-    if (Number.isFinite(next) && next !== _balance) {
-      _balance = next;
-      for (const cb of _balanceListeners) {
-        try { cb(_balance); } catch (_) {}
-      }
+    if (!Number.isFinite(next) || next === _balance) return;
+    _setBalanceLocal(next);
+    ensureBroadcast();
+    if (_bcChannel) {
+      try { _bcChannel.postMessage({ kind: 'balance', balance: next }); } catch (_) {}
     }
   }
 
@@ -378,6 +403,10 @@
         _isClosed = true;
         stopHeartbeat();
         clearSession();
+        if (_bcChannel) {
+          try { _bcChannel.close(); } catch (_) {}
+          _bcChannel = null;
+        }
       }
       return { deposited: Number(data.deposited) || 0 };
     });
