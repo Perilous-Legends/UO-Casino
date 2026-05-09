@@ -52,7 +52,7 @@ const ZONES = [
   // server-side via [PokerMavensConfigure.
   { id: 'poker',     label: 'Multiplayer Holdem',   x: 441, y: 393, w: 128, h:  80, type: 'pl-poker', placeholder: true },
   { id: 'uth',       label: "Ultimate Texas\nHold'em", x: 669, y: 471, w:  94, h:  58, type: 'game',     url: './uth-test.html' },
-  { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html', placeholder: true },
+  { id: 'crash',     label: 'Dragon Crash',         x: 440, y: 654, w:  60, h: 109, type: 'game',        url: './crash.html', iconAnim: { frames: ['sprites/dragon/fly/dragon_fly_00.png','sprites/dragon/fly/dragon_fly_01.png','sprites/dragon/fly/dragon_fly_02.png','sprites/dragon/fly/dragon_fly_03.png','sprites/dragon/fly/dragon_fly_04.png'], frameMs: 130, scale: 1.4 } },
   { id: 'kong',      label: 'Kong',                 x: 673, y: 654, w:  51, h:  96, type: 'game',        url: './kong.html' },
   { id: 'craps',     label: 'Craps',                x: 679, y: 299, w: 132, h:  58, type: 'game',        url: './craps.html' },
   // Slots — in-house build at slots2/ wired through PL.wager/PL.settle.
@@ -193,6 +193,15 @@ class CasinoScene extends Phaser.Scene {
       frameWidth: CANDLE_SPRITE.frameWidth,
       frameHeight: CANDLE_SPRITE.frameHeight
     });
+
+    // Per-zone iconAnim frames (e.g. flying dragon for Dragon Crash)
+    for (const zone of ZONES) {
+      if (zone.iconAnim && Array.isArray(zone.iconAnim.frames)) {
+        zone.iconAnim.frames.forEach((url, i) => {
+          this.load.image(`zoneicon_${zone.id}_${i}`, url);
+        });
+      }
+    }
 
     // manifest and spriteBody are already set before Phaser init - load sprites directly
     if (manifest && manifest.bodies && manifest.bodies[spriteBody]) {
@@ -343,10 +352,23 @@ class CasinoScene extends Phaser.Scene {
       tableBody.zoneData = zone;
       this.tableZones.push(tableBody);
 
-      // Zones without underlying art on casino-floor.jpg need a visible
-      // placeholder so players can find them. Mike can remove the
-      // `placeholder: true` flag once he paints them onto the floor.
-      if (zone.placeholder) {
+      // iconAnim: animated sprite icon at the zone (e.g. flying dragon)
+      if (zone.iconAnim && Array.isArray(zone.iconAnim.frames) && zone.iconAnim.frames.length) {
+        const sprite = this.add.image(zone.x, zone.y, `zoneicon_${zone.id}_0`)
+          .setOrigin(0.5)
+          .setScale(zone.iconAnim.scale || 1)
+          .setDepth(2);
+        let frame = 0;
+        this.time.addEvent({
+          delay: zone.iconAnim.frameMs || 130,
+          loop: true,
+          callback: () => {
+            frame = (frame + 1) % zone.iconAnim.frames.length;
+            sprite.setTexture(`zoneicon_${zone.id}_${frame}`);
+          }
+        });
+      } else if (zone.placeholder) {
+        // Zones without underlying art OR a sprite icon get a translucent rectangle.
         const plate = this.add.rectangle(zone.x, zone.y, zone.w, zone.h, 0x222244, 0.55)
           .setStrokeStyle(2, 0xffd700, 0.75)
           .setDepth(1);
