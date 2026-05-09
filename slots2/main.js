@@ -100,7 +100,7 @@
   // ────────────────────────────────────────────────────────────────────
   let balance     = 0;
   let bet         = CFG.defaultBet;
-  const lines     = CFG.lineCount;            // fixed at 20 (original spec)
+  let lines       = CFG.lineCount;
   let spinning    = false;
   let bridgeReady = false;
   let lastWin     = 0;
@@ -161,35 +161,65 @@
     const ASSETS = 'assets/images/slot-machine/';
     function imgBtn(id, base, extraClass) {
       return `<button class="img-btn ${extraClass||''}" id="${id}"
-                       style="background-image:url('${ASSETS}${base}.png');"
                        data-base="${base}"
-                       onmouseover="this.style.backgroundImage='url(${ASSETS}${base}-hover.png)'"
-                       onmouseout="this.style.backgroundImage='url(${ASSETS}${base}.png)'"
-                       onmousedown="this.style.backgroundImage='url(${ASSETS}${base}-active.png)'"
-                       onmouseup="this.style.backgroundImage='url(${ASSETS}${base}-hover.png)'"
+                       style="background-image:url('${ASSETS}${base}.png');"
+                       onmouseover="if(!this.disabled)this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'-hover.png)'"
+                       onmouseout="this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'.png)'"
+                       onmousedown="if(!this.disabled)this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'-active.png)'"
+                       onmouseup="if(!this.disabled)this.style.backgroundImage='url(${ASSETS}'+this.dataset.base+'-hover.png)'"
               ></button>`;
     }
+    // Native frame is 1976 × 1080 (matches the original 1Stake layout).
+    // Inside that frame, the reel canvas is 1400×600 centered, sitting
+    // at bottom: 283 (so top: 197). Controls live in a 1450-wide band
+    // along the bottom, centered.
     root.innerHTML = `
-      <div class="machine">
-        <div class="hud">
-          <div class="hud-cell"><span class="hud-label">Bank</span><span id="balance" class="hud-value">…</span><span class="hud-suffix">g</span></div>
-          <div class="hud-cell"><span class="hud-label">Bet</span><span id="totalBet" class="hud-value">…</span><span class="hud-suffix">g</span></div>
-          <div class="hud-cell"><span class="hud-label">Win</span><span id="lastWin" class="hud-value">0</span><span class="hud-suffix">g</span></div>
-        </div>
+      <div class="machine" id="machine">
+        <!-- Reel grid: 5 cols × 3 rows, sits at left:288 top:197 (1400×600) -->
         <div class="reels" id="reels"></div>
         <div class="msg" id="resultMsg"></div>
-        <div class="controls">
+
+        <!-- Hidden offscreen WIN readout (floating .msg over reels handles the display) -->
+        <span id="lastWin" style="display:none">0</span>
+
+        <!-- Control band (1450 wide, centered) -->
+        <div class="ctl-band">
+          <!-- Bank readout — top-left of the band -->
+          <div class="hud-balance">
+            <span class="hud-label">BANK</span>
+            <span class="hud-value" id="balance">…</span>
+            <span class="hud-suffix">g</span>
+          </div>
+
+          <!-- Total bet readout — centered above the spin button -->
+          <div class="hud-totalbet">
+            <span class="hud-label">TOTAL BET</span>
+            <span class="hud-value" id="totalBet">…</span>
+            <span class="hud-suffix">g</span>
+          </div>
+
           ${imgBtn('paytableBtn', 'btn_paytable')}
-          <div class="bet-stack">
+
+          <!-- BET / LINE -/+ -->
+          <div class="bet-group">
+            <div class="bet-cap">BET / LINE</div>
             ${imgBtn('betMinus', 'btn_bet_minus')}
-            <div class="bet-display">
-              <span class="bet-cap">Bet / line</span>
-              <span class="bet-num" id="betDisplay">${CFG.defaultBet}</span>
-            </div>
+            <span class="bet-num" id="betDisplay">${CFG.defaultBet}</span>
             ${imgBtn('betPlus', 'btn_bet_plus')}
           </div>
+
           ${imgBtn('maxBetBtn', 'btn_max')}
+
           ${imgBtn('spinBtn', 'btn_spin', 'spin')}
+
+          <!-- LINES -/+ -->
+          <div class="lines-group">
+            <div class="bet-cap">LINES</div>
+            ${imgBtn('linesMinus', 'btn_bet_minus')}
+            <span class="bet-num" id="linesDisplay">${CFG.lineCount}</span>
+            ${imgBtn('linesPlus', 'btn_bet_plus')}
+          </div>
+
           ${imgBtn('muteBtn', 'btn_sound_on', 'mute')}
         </div>
       </div>
@@ -214,6 +244,9 @@
         <button class="text-btn" id="bonusCloseBtn" style="display:none;">COLLECT &amp; CONTINUE</button>
       </div>
     `;
+
+    fitMachine();
+    window.addEventListener('resize', fitMachine);
 
     // Build reels DOM (5 cols × 3 rows of <img>)
     const reelsEl = document.getElementById('reels');
@@ -254,6 +287,8 @@
     document.getElementById('spinBtn').addEventListener('click', onSpin);
     document.getElementById('betMinus').addEventListener('click', () => changeBet(-CFG.betStep));
     document.getElementById('betPlus').addEventListener('click',  () => changeBet(+CFG.betStep));
+    document.getElementById('linesMinus').addEventListener('click', () => changeLines(-1));
+    document.getElementById('linesPlus').addEventListener('click',  () => changeLines(+1));
     document.getElementById('maxBetBtn').addEventListener('click', () => { bet = CFG.maxBet; renderBet(); });
     document.getElementById('paytableBtn').addEventListener('click', () => togglePaytable(true));
     document.getElementById('ptCloseBtn').addEventListener('click',  () => togglePaytable(false));
@@ -273,11 +308,28 @@
     bet = Math.max(CFG.minBet, Math.min(CFG.maxBet, bet + delta));
     renderBet();
   }
+  function changeLines(delta) {
+    if (spinning) return;
+    lines = Math.max(1, Math.min(CFG.lineCount, lines + delta));
+    document.getElementById('linesDisplay').textContent = lines;
+    renderTotalBet();
+  }
   function renderBet() {
     document.getElementById('betDisplay').textContent = bet.toLocaleString();
     renderTotalBet();
   }
   function totalBet() { return bet * lines; }
+
+  // Scale the 1976×1080 native frame to fit the viewport while preserving
+  // aspect ratio (mirrors the original 1Stake `transform: scale` trick).
+  function fitMachine() {
+    const m = document.getElementById('machine');
+    if (!m) return;
+    const sx = window.innerWidth  / 1976;
+    const sy = window.innerHeight / 1080;
+    const s  = Math.min(sx, sy);
+    m.style.setProperty('--s', s);
+  }
   function renderBalance() { document.getElementById('balance').textContent = balance.toLocaleString(); }
   function renderTotalBet() { document.getElementById('totalBet').textContent = totalBet().toLocaleString(); }
 
