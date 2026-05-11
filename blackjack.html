@@ -446,11 +446,13 @@ async function checkPlayerBJ(){
             await plSettle(h.bet);
             settle([{result:'push',net:0}]);
         } else {
-            // Player BJ pays 3:2 (gross payout = bet returned + 1.5x bet)
-            const pay=Math.floor(h.bet*1.5);
+            // Player BJ pays 6:5 (PL casino "tourist tax" — house edge lands at
+            // ~2.0%, which is 3.2x baseline 0.6% for 6-deck H17 3:2 BJ. Closest
+            // recognized real-world variant to our 2.5x gold-sink target).
+            const pay=Math.floor(h.bet*1.2);
             await plSettle(h.bet+pay);
             netPL+=pay; handsCount++; updateStats();
-            setMsg('BLACKJACK! Pays 3:2 (+'+fmt(pay)+'g)','bj');
+            setMsg('BLACKJACK! Pays 6:5 (+'+fmt(pay)+'g)','bj');
             snd.bigwin();
             G.phase=PHASES.RESULT;
             renderAll(); renderBtns();

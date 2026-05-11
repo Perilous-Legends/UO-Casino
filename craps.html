@@ -835,15 +835,7 @@ canvas.die{border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.7);display:bloc
 
 
 
-  <strong style="color:#4aff7a">PASS/COME ODDS (3-4-5x)</strong>: 4/10 max 3x pays 2:1 &nbsp;&middot;&nbsp; 5/9 max 4x pays 3:2 &nbsp;&middot;&nbsp; 6/8 max 5x pays 6:5 &nbsp;|&nbsp;
-
-
-
-  <strong style="color:#ff8888">LAY ODDS</strong>: 4/10 pay 1:2 &nbsp;&middot;&nbsp; 5/9 pay 2:3 &nbsp;&middot;&nbsp; 6/8 pay 5:6 &nbsp;|&nbsp;
-
-
-
-  Click Come/DC badge on number box to add odds
+  <strong style="color:#ffd700">PL CASINO RULES</strong>: Pass / Don't Pass / Come / Don't Come pay <strong>19:20</strong> &nbsp;&middot;&nbsp; Field 2/12 pays 1:1 &nbsp;&middot;&nbsp; <strong style="color:#ff8888">Free odds not offered</strong>
 
 
 
@@ -1965,6 +1957,13 @@ async function placeBet(id){
 
 
 
+  // PL casino: free odds are disabled (they're the only 0%-edge bet in craps;
+  // removing them raises realized session edge on Pass/Don't Pass into the
+  // 2.5x-baseline target range).
+  if(id==='passodds'||id==='dontodds'){ showMsg('Free odds not available at PL — house rules','neutral'); return; }
+
+
+
   if((id==='passline'||id==='dontpass') && phase==='point'){ showMsg("Pass/Don't Pass: come-out only",'neutral'); return; }
 
 
@@ -2152,6 +2151,12 @@ async function addComeOdds(num){
 
 
 
+  // PL casino: free odds disabled. Players in removeMode still need to be
+  // able to pull existing odds bets (cleanup path).
+  if(!removeMode){ showMsg('Free odds not available at PL — house rules','neutral'); return; }
+
+
+
   if(removeMode){ removeMode ? (comeOdds[num] ? removeComeOdds(num) : removeComeBet(num)) : null; return; }
 
 
@@ -2214,6 +2219,11 @@ async function addDCOdds(num){
 
 
   if(rolling) return;
+
+
+
+  // PL casino: lay odds disabled (free odds rule).
+  if(!removeMode){ showMsg('Lay odds not available at PL — house rules','neutral'); return; }
 
 
 
@@ -2466,7 +2476,8 @@ async function resolveRoll(){
 
 
   if(bets.field){
-    if(total===2||total===12)              { collect('field', 2, 'Field 2:1'); }
+    // PL casino: 2 and 12 pay 1:1 (was 2:1). Field edge: 2.78% → 5.56% (2x baseline).
+    if(total===2||total===12)              { collect('field', 1, 'Field 2/12'); }
     else if([3,4,9,10,11].includes(total)) { collect('field', 1, 'Field');    }
     else                                   { lose('field','Field');            }
   }
@@ -2621,7 +2632,7 @@ async function resolveRoll(){
 
 
 
-      grossPayout+=cb*2; winTotal+=cb; stakeReturn+=cb; payouts.push(`Come ${n} +${fmt(cb)}g`);
+      { const w=Math.round(cb*0.95); grossPayout+=cb+w; winTotal+=w; stakeReturn+=cb; payouts.push(`Come ${n} +${fmt(w)}g`); }
 
 
 
@@ -2673,7 +2684,7 @@ async function resolveRoll(){
 
 
 
-      grossPayout+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`DC ${n} +${fmt(db)}g`);
+      const w=Math.round(db*0.95); grossPayout+=db+w; winTotal+=w; stakeReturn+=db; payouts.push(`DC ${n} +${fmt(w)}g`);
 
 
 
@@ -2717,7 +2728,7 @@ async function resolveRoll(){
 
 
 
-    if(total===7||total===11){ const cb0=bets.come; grossPayout+=cb0*2; winTotal+=cb0; stakeReturn+=cb0; payouts.push(`Come +${fmt(cb0)}g`); bets.come=0; }
+    if(total===7||total===11){ const cb0=bets.come; const w=Math.round(cb0*0.95); grossPayout+=cb0+w; winTotal+=w; stakeReturn+=cb0; payouts.push(`Come +${fmt(w)}g`); bets.come=0; }
 
 
 
@@ -2745,7 +2756,7 @@ async function resolveRoll(){
 
 
 
-    if(total===2||total===3){ const dc0=bets.dontcome; grossPayout+=dc0*2; winTotal+=dc0; stakeReturn+=dc0; payouts.push(`DC +${fmt(dc0)}g`); bets.dontcome=0; }
+    if(total===2||total===3){ const dc0=bets.dontcome; const w=Math.round(dc0*0.95); grossPayout+=dc0+w; winTotal+=w; stakeReturn+=dc0; payouts.push(`DC +${fmt(w)}g`); bets.dontcome=0; }
 
 
 
@@ -2785,7 +2796,7 @@ async function resolveRoll(){
 
 
 
-      collect('passline',1,'Pass Line'); lose('dontpass',"Don't Pass");
+      collect('passline',0.95,'Pass Line'); lose('dontpass',"Don't Pass");
 
 
 
@@ -2797,7 +2808,7 @@ async function resolveRoll(){
 
 
 
-      lose('passline','Pass Line'); collect('dontpass',1,"Don't Pass");
+      lose('passline','Pass Line'); collect('dontpass',0.95,"Don't Pass");
 
 
 
@@ -2809,7 +2820,7 @@ async function resolveRoll(){
 
 
 
-      lose('passline','Pass Line'); collect('dontpass',1,"Don't Pass");
+      lose('passline','Pass Line'); collect('dontpass',0.95,"Don't Pass");
 
 
 
@@ -2873,7 +2884,7 @@ async function resolveRoll(){
 
 
 
-      if(pb){ grossPayout+=pb*2; winTotal+=pb; stakeReturn+=pb; payouts.push(`Pass Line +${fmt(pb)}g`); bets.passline=0; }
+      if(pb){ const w=Math.round(pb*0.95); grossPayout+=pb+w; winTotal+=w; stakeReturn+=pb; payouts.push(`Pass Line +${fmt(w)}g`); bets.passline=0; }
 
 
 
@@ -2905,7 +2916,7 @@ async function resolveRoll(){
 
 
 
-      if(db){ grossPayout+=db*2; winTotal+=db; stakeReturn+=db; payouts.push(`Don't Pass +${fmt(db)}g`); bets.dontpass=0; }
+      if(db){ const w=Math.round(db*0.95); grossPayout+=db+w; winTotal+=w; stakeReturn+=db; payouts.push(`Don't Pass +${fmt(w)}g`); bets.dontpass=0; }
 
 
 

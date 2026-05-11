@@ -584,7 +584,14 @@ function cmpArr(a,b){ for(let i=0;i<a.length;i++)if(a[i]!==b[i])return a[i]-b[i]
 function cmpHands(a,b){ return a.rank!==b.rank?a.rank-b.rank:cmpArr(a.cmp,b.cmp); }
 
 // ── PAYOUTS ──
-function blindBonus(rank,bet){ return bet*([0,0,0,0,1,1.5,3,10,50,500][rank]||0); }
+// PL casino edge: Blind paytable reduced ~60% from standard UTH to push the
+// Ante-bet house edge from 2.19% → ~5.5% (2.5x baseline). Trips side-bet
+// paytable left at standard (already 8.5% edge — high enough).
+//   Standard Blind: [0,0,0,0,1,1.5,3,10,50,500]
+//   PL Blind:       [0,0,0,0,0.5,1,2,7,30,300]
+// Indices: 0/1/2 = Nothing/Pair/TwoPair (push), 3 = Trips (push), 4 = Straight,
+// 5 = Flush, 6 = Full House, 7 = Quads, 8 = Straight Flush, 9 = Royal Flush.
+function blindBonus(rank,bet){ return bet*([0,0,0,0,0.5,1,2,7,30,300][rank]||0); }
 function tripsProfit(rank,bet){ if(!bet)return 0; return bet*[-1,-1,-1,3,4,7,8,30,40,50][rank]; }
 
 // ── GAME STATE ──

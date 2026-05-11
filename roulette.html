@@ -669,6 +669,10 @@ ballAudio.currentTime=0; ballAudio.play().catch(()=>{});
 }
 
 // ---- PAYOUT ----
+// PL house edge = 13.15% (2.5x of American roulette baseline 5.26%).
+// Achieved by paying 91.7% of the standard gross payout uniformly across
+// every bet type — keeps the wheel visually standard (38 numbers, 0+00)
+// while landing exactly 2.5x edge on all bets.
 function calcPayout(wn){
   let total=0;
   const nNum=wn==='00'?-1:Number(wn);
@@ -686,7 +690,7 @@ function calcPayout(wn){
     else if(k==='3rd12' &&nNum>=25&&nNum<=36)   { win=amt*3; }
     total+=win;
   });
-  return total;
+  return Math.floor(total * 0.917);
 }
 
 async function showResult(){

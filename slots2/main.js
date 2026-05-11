@@ -29,24 +29,27 @@
     defaultBet: 100,
     betStep: 100,
     lineCount: 20,
+    // Paytable scaled by 0.79 from 1Stake baseline to land 75.27% base RTP.
+    // Combined with bonus wheel (avg 1.667x total bet × 0.0209 trigger rate)
+    // total RTP = 78.75% → 21.25% house edge (2.5x Vegas Strip slots baseline).
     symbols: [
       // Low tier
-      { file: 'j.png',        scatter: false, wild: false, w3: 12, w4: 24, w5: 49 },
-      { file: 'q.png',        scatter: false, wild: false, w3: 12, w4: 24, w5: 49 },
-      { file: 'a.png',        scatter: false, wild: false, w3: 12, w4: 24, w5: 49 },
+      { file: 'j.png',        scatter: false, wild: false, w3: 9,  w4: 19, w5: 39 },
+      { file: 'q.png',        scatter: false, wild: false, w3: 9,  w4: 19, w5: 39 },
+      { file: 'a.png',        scatter: false, wild: false, w3: 9,  w4: 19, w5: 39 },
       // Mid-low
-      { file: 'clubs.png',    scatter: false, wild: false, w3: 18, w4: 34, w5: 68 },
-      { file: 'spades.png',   scatter: false, wild: false, w3: 18, w4: 34, w5: 68 },
+      { file: 'clubs.png',    scatter: false, wild: false, w3: 14, w4: 27, w5: 54 },
+      { file: 'spades.png',   scatter: false, wild: false, w3: 14, w4: 27, w5: 54 },
       // Mid
-      { file: 'hearts.png',   scatter: false, wild: false, w3: 24, w4: 47, w5: 93 },
-      { file: 'diamonds.png', scatter: false, wild: false, w3: 24, w4: 47, w5: 93 },
-      { file: 'k.png',        scatter: false, wild: false, w3: 24, w4: 47, w5: 93 },
+      { file: 'hearts.png',   scatter: false, wild: false, w3: 19, w4: 37, w5: 73 },
+      { file: 'diamonds.png', scatter: false, wild: false, w3: 19, w4: 37, w5: 73 },
+      { file: 'k.png',        scatter: false, wild: false, w3: 19, w4: 37, w5: 73 },
       // Jackpot
-      { file: 'seven.png',    scatter: false, wild: false, w3: 49, w4: 97, w5: 194 },
+      { file: 'seven.png',    scatter: false, wild: false, w3: 39, w4: 77, w5: 153 },
       // Wild — substitutes for any non-scatter
       { file: 'wild.png',     scatter: false, wild: true,  w3: 0,  w4: 0,  w5: 0   },
       // Scatter — pays anywhere
-      { file: 'scatter.png',  scatter: true,  wild: false, w3: 13, w4: 31, w5: 100 },
+      { file: 'scatter.png',  scatter: true,  wild: false, w3: 10, w4: 24, w5: 79 },
     ],
     // Reel strips. Frequencies tuned so 3 scatters ~= 1.68%, 4 ~= 0.13%,
     // 5 ~= 0.004% per memory. Strips here have 3 scatters in 23 stops
@@ -73,24 +76,28 @@
     ],
   };
 
-  // Bonus wheel slices (15 slots, alternating red/white) per memory spec.
-  // Each is a payout descriptor: numeric = absolute gold; '*N' = N×bet.
+  // Bonus wheel slices (15 slots). Every prize is a multiplier of the
+  // player's TOTAL bet (bet/line × lines). This keeps the bonus EV proportional
+  // at all bet sizes — old flat-gold prizes made the bonus 28× over-EV at
+  // min bet and negligible at max bet.
+  // Schedule: 7×0.5x, 5×1x, 1×1.5x, 1×5x, 1×10x (JACKPOT). Avg 1.667x → bonus
+  // RTP ≈ 3.48% per regular spin given 0.0209 expected bonus spins/spin.
   const WHEEL_PRIZES = [
-    { kind: 'flat', label: '5,000',     amount: 5000 },
-    { kind: 'flat', label: '10,000',    amount: 10000 },
-    { kind: 'flat', label: '25,000',    amount: 25000 },
-    { kind: 'flat', label: '5,000',     amount: 5000 },
-    { kind: 'flat', label: '50,000',    amount: 50000 },
-    { kind: 'flat', label: '10,000',    amount: 10000 },
-    { kind: 'mult', label: '2× BET',    mult: 2 },
-    { kind: 'flat', label: '5,000',     amount: 5000 },
-    { kind: 'flat', label: '100,000',   amount: 100000 },
-    { kind: 'flat', label: '10,000',    amount: 10000 },
-    { kind: 'mult', label: '5× BET',    mult: 5 },
-    { kind: 'flat', label: '25,000',    amount: 25000 },
-    { kind: 'jackpot', label: 'JACKPOT 500,000', amount: 500000 },
-    { kind: 'mult', label: '10× BET',   mult: 10 },
-    { kind: 'freespin', label: 'FREE SPIN +50,000', amount: 50000 },
+    { mult: 0.5, label: '½× BET' },                 // 0
+    { mult: 1,   label: '1× BET' },                 // 1
+    { mult: 0.5, label: '½× BET' },                 // 2
+    { mult: 5,   label: '5× BET' },                 // 3
+    { mult: 0.5, label: '½× BET' },                 // 4
+    { mult: 1,   label: '1× BET' },                 // 5
+    { mult: 1.5, label: '1½× BET' },                // 6
+    { mult: 0.5, label: '½× BET' },                 // 7
+    { mult: 1,   label: '1× BET' },                 // 8
+    { mult: 0.5, label: '½× BET' },                 // 9
+    { mult: 1,   label: '1× BET' },                 // 10
+    { mult: 0.5, label: '½× BET' },                 // 11
+    { mult: 10,  label: 'JACKPOT 10×', jackpot: true }, // 12
+    { mult: 0.5, label: '½× BET' },                 // 13
+    { mult: 1,   label: '1× BET' },                 // 14
   ];
 
   const SCATTERS_TO_SPINS = { 3: 1, 4: 3, 5: 5 };
@@ -402,7 +409,7 @@
     if (result.scatterCount >= 3) {
       // The bonus round adds its own credits via separate settle calls.
       await PL.settle('slots', payout);
-      bonusBet = bet;
+      bonusBet = bet * lines; // wheel mults scale against TOTAL bet
       bonusSpinsLeft = SCATTERS_TO_SPINS[result.scatterCount] || 1;
       document.getElementById('bonusSub').textContent =
         result.scatterCount + ' scatters — ' + bonusSpinsLeft + ' spin' + (bonusSpinsLeft > 1 ? 's' : '');
@@ -550,9 +557,11 @@
     document.getElementById('bonusSpinBtn').style.display = '';
     document.getElementById('bonusCloseBtn').style.display = 'none';
     document.getElementById('bonusMsg').textContent = '';
+    currentWheelRotation = 0; // fresh start for the next bonus event
   }
 
   let bonusSpinning = false;
+  let currentWheelRotation = 0; // persists between bonus spins so the wheel doesn't snap back to 0
   async function spinBonusWheel() {
     if (bonusSpinning || bonusSpinsLeft <= 0) return;
     bonusSpinning = true;
@@ -565,17 +574,24 @@
     btn.disabled = true;
     msg.textContent = '';
 
-    let extraSpin = false;
     try {
       playSound('wheel-spin', /*loop*/ true);
 
-      // Wheel slices are drawn clockwise from the pointer (top). Rotating
-      // the wheel by `-(slice + 0.5) * sliceDeg` (mod 360) lands slice
-      // center under the pointer. Add 5..8 full revs for a real spin.
+      // Wheel slices are drawn clockwise from the pointer (top). To land
+      // slice center at the pointer we need total rotation ≡ -(slice + 0.5)
+      // * sliceDeg (mod 360). Continue from currentWheelRotation instead of
+      // snapping back to 0 — otherwise the player briefly sees slice 0
+      // ("½× BET") flash under the pointer at the start of each spin.
       const slice = Math.floor(Math.random() * WHEEL_PRIZES.length);
       const sliceDeg = 360 / WHEEL_PRIZES.length;
       const fullRevs = 5 + Math.floor(Math.random() * 4);
-      const totalRotation = fullRevs * 360 - (slice + 0.5) * sliceDeg;
+      const wantedMod  = ((-(slice + 0.5) * sliceDeg) % 360 + 360) % 360;
+      const currentMod = ((currentWheelRotation) % 360 + 360) % 360;
+      let deltaMod = wantedMod - currentMod;
+      if (deltaMod < 0) deltaMod += 360;
+      const delta = fullRevs * 360 + deltaMod;
+      const startRotation = currentWheelRotation;
+      const targetRotation = startRotation + delta;
       const dur = 4500;
       const start = Date.now();
 
@@ -583,18 +599,16 @@
         function tick() {
           const t = Math.min(1, (Date.now() - start) / dur);
           const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-          drawBonusWheel(eased * totalRotation);
+          drawBonusWheel(startRotation + eased * delta);
           if (t < 1) requestAnimationFrame(tick);
           else resolve();
         }
         requestAnimationFrame(tick);
       });
+      currentWheelRotation = targetRotation;
 
       const prize = WHEEL_PRIZES[slice];
-      let payout = 0;
-      if (prize.kind === 'flat' || prize.kind === 'jackpot') payout = prize.amount;
-      else if (prize.kind === 'mult') payout = prize.mult * bonusBet;
-      else if (prize.kind === 'freespin') { payout = prize.amount; extraSpin = true; }
+      const payout = Math.round(prize.mult * bonusBet);
 
       if (payout > 0) {
         try { await PL.settle('slots', payout); }
@@ -605,10 +619,7 @@
         msg.textContent = prize.label;
       }
 
-      // Consume the spin we just used. Free-spin awards an extra so the
-      // net change is zero.
       bonusSpinsLeft -= 1;
-      if (extraSpin) bonusSpinsLeft += 1;
     } finally {
       stopSound('wheel-spin');
       bonusSpinning = false;
