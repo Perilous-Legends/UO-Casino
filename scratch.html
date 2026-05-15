@@ -456,19 +456,19 @@
   let cellDefs = DEFAULT_CELLS.map(c => ({ ...c }));
 
   // Prizes as % of buy-in. img = path relative to scratch.html
-  // PL casino: every pct multiplied by 0.833 from prior schedule to push RTP
-  // from ~90% → ~75% (25% house edge = 2.5x online-scratch baseline 10%).
-  // JACKPOT slot kept at "JACKPOT" label (pays 1667% instead of 2000%).
+  // PL casino: reverted to the original clean-number payout schedule
+  // (10% house edge / ~90% RTP). The earlier 25%-edge variant multiplied
+  // every pct by 0.833 which made labels look like garbage (104%/167%/417%).
   const PRIZES = [
-    { pct:    8, label:   '8%', img: '../slots2/assets/images/symbols/q.png',        color: '#cccccc', weight:  9   },
-    { pct:   21, label:  '21%', img: '../slots2/assets/images/symbols/k.png',        color: '#ffd700', weight: 12   },
-    { pct:   42, label:  '42%', img: '../slots2/assets/images/symbols/clubs.png',    color: '#ffd700', weight: 21   },
-    { pct:   62, label:  '62%', img: '../slots2/assets/images/symbols/diamonds.png', color: '#00ccff', weight: 23   },
-    { pct:  104, label: '104%', img: '../slots2/assets/images/symbols/hearts.png',   color: '#00ccff', weight: 18   },
-    { pct:  125, label: '125%', img: '../slots2/assets/images/symbols/spades.png',   color: '#ff8800', weight:  8   },
-    { pct:  167, label: '167%', img: '../slots2/assets/images/symbols/seven.png',    color: '#ff8800', weight:  3.5 },
-    { pct:  417, label: '417%', img: '../slots2/assets/images/symbols/scatter.png',  color: '#ff4400', weight:  1.5 },
-    { pct: 1667, label: 'JACKPOT', img: '../slots2/assets/images/symbols/wild.png',  color: '#ff0066', weight:  0.3 },
+    { pct:   10, label:   '10%', img: '../slots2/assets/images/symbols/q.png',        color: '#cccccc', weight:  9   },
+    { pct:   25, label:   '25%', img: '../slots2/assets/images/symbols/k.png',        color: '#ffd700', weight: 12   },
+    { pct:   50, label:   '50%', img: '../slots2/assets/images/symbols/clubs.png',    color: '#ffd700', weight: 21   },
+    { pct:   75, label:   '75%', img: '../slots2/assets/images/symbols/diamonds.png', color: '#00ccff', weight: 23   },
+    { pct:  125, label:  '125%', img: '../slots2/assets/images/symbols/hearts.png',   color: '#00ccff', weight: 18   },
+    { pct:  150, label:  '150%', img: '../slots2/assets/images/symbols/spades.png',   color: '#ff8800', weight:  8   },
+    { pct:  200, label:  '200%', img: '../slots2/assets/images/symbols/seven.png',    color: '#ff8800', weight:  3.5 },
+    { pct:  500, label:  '500%', img: '../slots2/assets/images/symbols/scatter.png',  color: '#ff4400', weight:  1.5 },
+    { pct: 2000, label: 'JACKPOT', img: '../slots2/assets/images/symbols/wild.png',   color: '#ff0066', weight:  0.3 },
   ];
 
   let balance = 0;
