@@ -70,7 +70,7 @@
   // ────────────────────────────────────────────────────────────────────
   // ⚠ Quick Cloudflare tunnel — URL changes every restart. When we move
   // to perilouslegends.com replace this with the named-tunnel URL.
-  const PL_API_BASE_DEFAULT = 'https://where-licenses-career-keeping.trycloudflare.com';
+  const PL_API_BASE_DEFAULT = 'https://unique-eagles-weighted-varieties.trycloudflare.com';
 
   function resolveApiBase() {
     const u = new URL(window.location.href);
